@@ -14,6 +14,8 @@ export { resolveCivilTime } from "./resolution/civil-time.js";
 export type { CivilTimeRequest, CivilTimeResult } from "./resolution/civil-time.js";
 export { addBusinessDays } from "./providers/business-calendar.js";
 export type { BusinessCalendarSnapshot, BusinessDayRequest } from "./providers/business-calendar.js";
+export { astronomicalSnapshot, availabilitySnapshot, businessCalendarSnapshot, customContextSnapshot, explicitReference, locationSnapshot, participantSnapshot, timezoneSnapshot } from "./providers/context-snapshots.js";
+export type { AstronomicalSnapshot, AvailabilitySnapshot, BusinessCalendarContextSnapshot, CustomContextSnapshot, ExplicitReferenceSnapshot, LocationSnapshot, ParticipantSnapshot, TimezoneSnapshot, ZoneRuleTransitionSnapshot } from "./providers/context-snapshots.js";
 export { observationReference } from "./providers/observer-snapshots.js";
 export type { ObserverKind, ObserverSnapshot } from "./providers/observer-snapshots.js";
 export { localeSnapshot } from "./providers/locale-snapshots.js";

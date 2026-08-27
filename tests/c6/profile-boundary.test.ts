@@ -19,6 +19,7 @@ describe("durable-occurrences profile boundary", () => {
           { id: "snapshot-temporal-core", support: { resolve: "partial" } },
           { id: "explicit-locale-snapshots", support: { resolve: "exact" } },
           { id: "explicit-observer-snapshots", support: { resolve: "exact" } },
+          { id: "explicit-context-snapshot-adapters", support: { resolve: "exact" } },
           { id: "elapsed-instant-offsets", support: { resolve: "exact" } },
           { id: "elapsed-subday-recurrence", support: { resolve: "exact" } },
           { id: "live-dynamic-observers", support: { resolve: "pending" } }
