@@ -41,6 +41,9 @@ lifecycle
 - Loss-aware cron/RRULE adapters for a small exact weekly subset.
 - SQLite-backed append-only Occurrences with materialization/replay checks.
 - Executable consumer evidence for 5xFive, Seshat, and the Cloudflare backward-channel package.
+- A CLI for direct parsing, validation, support classification, resolution, adapter interop, and materialization.
+- An MCP stdio server exposing Decan tools, resources, and prompts to agent hosts.
+- Public Proper Time dissemination materials: corpus page, launch argument, and standalone landing page.
 
 ## Human-first and agent-friendly
 
@@ -76,10 +79,56 @@ Missing context remains a typed `need`; supplied context must be explicit eviden
 - [SPEC.md](SPEC.md) — Proper Time / Decan framing and semantic model.
 - [docs/conformance.md](docs/conformance.md) — implemented support, invariants, and non-goals.
 - [docs/examples.md](docs/examples.md) — examples for source, snapshots, resolution, adapters, and materialization.
+- [docs/proper-time-corpus.md](docs/proper-time-corpus.md) — public corpus map for real temporal-intent evidence cases.
+- [docs/launch-argument.md](docs/launch-argument.md) — long-form public argument for the layer before schedules.
+- [site/index.html](site/index.html) — standalone landing page for Decan / Proper Time.
 - [fixtures/consumer-evidence/](fixtures/consumer-evidence/) — executable real-consumer corpus.
 - [references/](references/) — locked checkpoint chain and design history.
 - [src/](src/) — TypeScript reference implementation.
 - [tests/](tests/) — conformance and regression suite.
+
+## CLI
+
+After building, Decan exposes a command surface:
+
+```bash
+npm run build
+node dist/cli/index.js canonicalize fixtures/consumer-evidence/5xfive-banneker1-cron-trigger/authoring.ti
+node dist/cli/index.js import-cron "0 9 * * 1" --effective-from 2026-08-27
+```
+
+When installed as a package, the binaries are:
+
+```bash
+decan canonicalize intent.ti
+decan validate intent.ti
+decan support intent.ti
+decan resolve intent.ti --reference-time 2026-08-27T12:00:00Z --horizon-count 3 --context context.json
+decan import-cron "0 9 * * 1" --effective-from 2026-08-27
+decan import-rrule --dtstart 20260831T090000 --rrule FREQ=WEEKLY\;INTERVAL=1\;BYDAY=MO
+decan materialize --intent-id example.weekly --intent-version 1 --resolution resolution.json --candidate-id sha256:candidate --recorded-at 2026-08-27T21:53:00Z
+```
+
+## MCP
+
+Decan also ships a stdio MCP server:
+
+```bash
+decan-mcp
+```
+
+It exposes these tools:
+
+- `decan_canonicalize`
+- `decan_validate`
+- `decan_classify_support`
+- `decan_resolve`
+- `decan_import_cron`
+- `decan_import_rrule`
+- `decan_export_rrule`
+- `decan_materialize`
+
+It also exposes read-only resources for the spec, conformance guide, Proper Time corpus, and launch argument, plus prompts for explaining temporal intent and converting schedules into Decan with honest gaps.
 
 ## Development
 
@@ -94,11 +143,12 @@ Decan currently requires Node.js `>=22.13.0` because the durable Occurrences ada
 
 ## Status
 
-The initial primitive is built out through the v1.2 world-readiness checkpoint and the v1.3 public-packaging pass:
+The initial primitive is built out through the v1.2 world-readiness checkpoint, v1.3 public-packaging pass, and v1.4 public-interface sprint:
 
 - `temporal-core.resolve` is exact over Decan's declared support matrix.
 - cron/RRULE interop has an exact fail-closed subset.
 - live dynamic observers are closed as unsupported in core.
 - public packaging now states the Decan / Proper Time positioning, support claims, examples, and non-goals.
+- CLI and MCP surfaces now make Decan directly usable by humans, scripts, CI, and agent hosts.
 
 No license has been declared yet; treat the repository as not open-source licensed until that is chosen explicitly.

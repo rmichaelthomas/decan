@@ -7,6 +7,7 @@ describe("public package surface", () => {
     description?: string;
     exports?: Record<string, { types?: string; import?: string }>;
     files?: ReadonlyArray<string>;
+    bin?: Record<string, string>;
     private?: boolean;
     repository?: { url?: string };
     types?: string;
@@ -22,7 +23,10 @@ describe("public package surface", () => {
 
   it("points package consumers at the built TypeScript entrypoint", () => {
     expect(packageJson.exports?.["."]).toEqual({ types: "./dist/index.d.ts", import: "./dist/index.js" });
+    expect(packageJson.exports?.["./cli"]).toEqual({ types: "./dist/cli/commands.d.ts", import: "./dist/cli/commands.js" });
+    expect(packageJson.exports?.["./mcp"]).toEqual({ types: "./dist/mcp/server.d.ts", import: "./dist/mcp/server.js" });
+    expect(packageJson.bin).toEqual({ decan: "./dist/cli/index.js", "decan-mcp": "./dist/mcp/server.js" });
     expect(packageJson.types).toBe("./dist/index.d.ts");
-    expect(packageJson.files).toEqual(expect.arrayContaining(["dist", "README.md", "SPEC.md", "docs/conformance.md", "docs/consumer-evidence-pass.md", "docs/examples.md"]));
+    expect(packageJson.files).toEqual(expect.arrayContaining(["dist", "README.md", "SPEC.md", "docs/conformance.md", "docs/consumer-evidence-pass.md", "docs/examples.md", "docs/proper-time-corpus.md", "docs/launch-argument.md", "site/index.html"]));
   });
 });

@@ -40,7 +40,9 @@ Use `classifyResolveSupport(expression)` to inspect support before resolution.
 - explicit context snapshot adapters;
 - civil-time gap/fold behavior from pinned zone rules;
 - append-only materialization;
-- exact weekly cron/RRULE import/export subset.
+- exact weekly cron/RRULE import/export subset;
+- CLI commands for canonicalize, validate, support, resolve, import/export, and materialize;
+- MCP stdio tools, read-only resources, and prompts for agent hosts.
 
 ## Adapter support
 
@@ -80,7 +82,8 @@ Decan meets the agent-friendly design goal by providing:
 - support classification;
 - explicit snapshot inputs;
 - derivation-bearing candidates;
-- idempotent materialization.
+- idempotent materialization;
+- CLI and MCP surfaces that expose the same core behavior without ambient host inference.
 
 ## Non-conformant behavior
 

@@ -30,3 +30,5 @@ export { SQLiteOccurrenceStore } from "./occurrences/sqlite-store.js";
 export type { OccurrenceStore } from "./occurrences/store.js";
 export { createDurableOccurrencesRuntime, createTemporalCoreRuntime } from "./runtime/temporal-core-runtime.js";
 export type { DurableOccurrencesRuntime, TemporalCoreRuntime } from "./runtime/temporal-core-runtime.js";
+export { canonicalizeTemporalIntent, classifyTemporalSupport, exportRRuleTemporalIntent, importCronTemporalIntent, importRRuleTemporalIntent, materializeTemporalIntent, parseIsoDateValue, resolveTemporalIntent, validateTemporalIntent } from "./interface/operations.js";
+export type { CanonicalizeOperationInput, ClassifySupportOperationInput, ExportRRuleOperationInput, ImportCronOperationInput, ImportRRuleOperationInput, MaterializeOperationInput, ResolveOperationInput, TextSurface, ValidateOperationInput } from "./interface/operations.js";

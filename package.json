@@ -8,16 +8,31 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli/commands.d.ts",
+      "import": "./dist/cli/commands.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/server.d.ts",
+      "import": "./dist/mcp/server.js"
     }
   },
   "types": "./dist/index.d.ts",
+  "bin": {
+    "decan": "./dist/cli/index.js",
+    "decan-mcp": "./dist/mcp/server.js"
+  },
   "files": [
     "dist",
     "README.md",
     "SPEC.md",
     "docs/conformance.md",
     "docs/consumer-evidence-pass.md",
-    "docs/examples.md"
+    "docs/examples.md",
+    "docs/proper-time-corpus.md",
+    "docs/launch-argument.md",
+    "site/index.html"
   ],
   "repository": {
     "type": "git",
@@ -35,7 +50,9 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/mark-bins-executable.mjs",
+    "cli": "node dist/cli/index.js",
+    "mcp": "node dist/mcp/server.js",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -47,7 +64,9 @@
   },
   "dependencies": {
     "@js-temporal/polyfill": "^0.5.1",
+    "@modelcontextprotocol/server": "^2.0.0",
     "fast-check": "^4.9.0",
-    "json-canonicalize": "^1.1.1"
+    "json-canonicalize": "^1.1.1",
+    "zod": "^4.4.3"
   }
 }
