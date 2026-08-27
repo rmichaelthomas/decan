@@ -1,0 +1,79 @@
+{
+  "consumer": "5xFive / Banneker 1 Automations",
+  "intent": "Run the weekly digest automation on the cron trigger `0 9 * * 1`.",
+  "sourceEvidence": {
+    "repository": "/Users/rmichaelthomas/5xfive",
+    "commit": "04aa2e0",
+    "artifacts": [
+      "worker/lib/automation-compiler.ts",
+      "test/automation-compiler.test.ts",
+      "docs/plans/automations-ui-phase2.md",
+      "automations-ui-verification.md"
+    ],
+    "consumerBoundary": "5xFive owns trigger matching, Planes action execution, receipts, queue writes, and compliance; Decan owns the temporal interpretation and materializable occurrence candidates for the schedule trigger."
+  },
+  "source": {
+    "surface": "authoring",
+    "textFile": "authoring.ti"
+  },
+  "resolution": {
+    "referenceTime": "2026-08-27T12:00:00Z",
+    "horizon": { "kind": "count", "value": 3 },
+    "context": [
+      {
+        "kind": "timezone",
+        "id": "America/New_York",
+        "version": "tzdb-2026a-pinned",
+        "value": {
+          "initialOffsetMinutes": -240,
+          "transitions": []
+        }
+      }
+    ],
+    "references": []
+  },
+  "expected": {
+    "validationStatus": "valid",
+    "resolutionStatus": "resolved",
+    "candidateValues": [
+      {
+        "kind": "point_candidate",
+        "value": {
+          "date": "2026-08-31",
+          "instants": ["2026-08-31T13:00:00Z[America/New_York]"]
+        }
+      },
+      {
+        "kind": "point_candidate",
+        "value": {
+          "date": "2026-09-07",
+          "instants": ["2026-09-07T13:00:00Z[America/New_York]"]
+        }
+      },
+      {
+        "kind": "point_candidate",
+        "value": {
+          "date": "2026-09-14",
+          "instants": ["2026-09-14T13:00:00Z[America/New_York]"]
+        }
+      }
+    ],
+    "resolutionDerivationKinds": ["resolution_frame"],
+    "candidateDerivationKinds": ["explicit_snapshot_evaluation"],
+    "needs": [],
+    "materialization": {
+      "candidateIndex": 0,
+      "intentId": "fivexfive.banneker1.automation.weekly-digest",
+      "intentVersion": 1,
+      "recordedAt": "2026-08-27T12:00:01Z",
+      "asOfBefore": "2026-08-27T12:00:00Z"
+    }
+  },
+  "observedGaps": [
+    {
+      "id": "decan-repeat-clock-composition",
+      "status": "fixed",
+      "reason": "The 5xFive cron trigger path needs a weekly civil recurrence plus pinned local clock to resolve as concrete materializable instants. Decan now composes one recurrence expression and one clock point using the pinned timezone snapshot."
+    }
+  ]
+}

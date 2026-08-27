@@ -1,0 +1,17 @@
+intent fivexfive.banneker1.automation.weekly-digest
+source
+  kind imported_cron
+  value "0 9 * * 1"
+  created-at "2026-08-26T21:53:00.507Z"
+  actor "5xFive Automations UI Phase 2"
+time
+  point 09:00
+  repeat every week
+context
+  timezone @domain-timezone
+reference domain-timezone
+  kind context
+  source "5xFive domain timezone America/New_York"
+lifecycle
+  status active
+  effective-from 2026-08-31

@@ -19,10 +19,18 @@ export function resolveExpression(request: ResolveRequest): ResolveResult {
   const count = request.horizon.kind === "count" ? request.horizon.value : 1;
   const baseDate = Temporal.PlainDate.from(request.referenceTime.slice(0, 10));
   const points = (dates: ReadonlyArray<string>): TemporalCandidate[] => dates.map((date) => ({ kind: "point_candidate", value: { date } }));
-  const clockInstants = (hour: number, minute: number, second: number | undefined, requiredBy: string): ReadonlyArray<string> => {
+  const clockInstantsForDate = (date: Temporal.PlainDate, hour: number, minute: number, second: number | undefined, requiredBy: string): ReadonlyArray<string> => {
     const zone = contextFor(context, "timezone");
     if (!zone || typeof zone.value !== "object" || zone.value === null || !("initialOffsetMinutes" in zone.value) || !("transitions" in zone.value)) { addNeed(need("timezone", requiredBy)); return []; }
-    return resolveCivilTime({ id: zone.id, version: zone.version, initialOffsetMinutes: zone.value.initialOffsetMinutes as number, transitions: zone.value.transitions as ReadonlyArray<{ at: string; offsetMinutes: number }>, year: baseDate.year, month: baseDate.month, day: baseDate.day, hour, minute, ...(second === undefined ? {} : { second }) }).candidates;
+    return resolveCivilTime({ id: zone.id, version: zone.version, initialOffsetMinutes: zone.value.initialOffsetMinutes as number, transitions: zone.value.transitions as ReadonlyArray<{ at: string; offsetMinutes: number }>, year: date.year, month: date.month, day: date.day, hour, minute, ...(second === undefined ? {} : { second }) }).candidates;
+  };
+  const clockInstants = (hour: number, minute: number, second: number | undefined, requiredBy: string): ReadonlyArray<string> => clockInstantsForDate(baseDate, hour, minute, second, requiredBy);
+  const repeatDates = (expression: Extract<TemporalExpression, { kind: "repeat" }>, requiredBy: string): ReadonlyArray<Temporal.PlainDate> => {
+    const origin = request.lifecycle?.effectiveFrom;
+    if (!origin) { addNeed(need("feature", requiredBy, "Recurrence requires an explicit lifecycle origin.")); return []; }
+    const start = Temporal.PlainDate.from({ year: origin.year, month: origin.month, day: origin.day });
+    const add = (index: number) => expression.unit === "day" ? { days: expression.every * index } : expression.unit === "week" ? { weeks: expression.every * index } : expression.unit === "month" ? { months: expression.every * index } : expression.unit === "quarter" ? { months: expression.every * 3 * index } : { years: expression.every * index };
+    return Array.from({ length: count }, (_, index) => start.add(add(index)));
   };
   const applyOffset = (candidates: TemporalCandidate[], amount: Extract<TemporalExpression, { kind: "offset" }>["amount"], requiredBy: string, direction = 1): TemporalCandidate[] => candidates.map((candidate) => {
     if (candidate.kind !== "point_candidate" || typeof candidate.value !== "object" || candidate.value === null || !("date" in candidate.value) || typeof candidate.value.date !== "string") return candidate;
@@ -51,11 +59,7 @@ export function resolveExpression(request: ResolveRequest): ResolveResult {
         return [{ kind: "window_candidate", value: { startInstants: clockInstants(expression.value.start.hour, expression.value.start.minute, expression.value.start.second, "expression.window"), endInstants: clockInstants(expression.value.end.hour, expression.value.end.minute, expression.value.end.second, "expression.window") } }];
       }
       case "repeat": {
-        const origin = request.lifecycle?.effectiveFrom;
-        if (!origin) { addNeed(need("feature", "expression.repeat", "Recurrence requires an explicit lifecycle origin.")); return []; }
-        const start = Temporal.PlainDate.from({ year: origin.year, month: origin.month, day: origin.day });
-        const add = (index: number) => expression.unit === "day" ? { days: expression.every * index } : expression.unit === "week" ? { weeks: expression.every * index } : expression.unit === "month" ? { months: expression.every * index } : expression.unit === "quarter" ? { months: expression.every * 3 * index } : { years: expression.every * index };
-        return points(Array.from({ length: count }, (_, index) => start.add(add(index)).toString()));
+        return points(repeatDates(expression, "expression.repeat").map((date) => date.toString()));
       }
       case "selection": {
         const monthStart = Temporal.PlainDate.from({ year: baseDate.year, month: baseDate.month, day: 1 });
@@ -87,6 +91,20 @@ export function resolveExpression(request: ResolveRequest): ResolveResult {
       case "condition":
         return [];
       case "compound": {
+        const repeats = expression.expressions.filter((item): item is Extract<TemporalExpression, { kind: "repeat" }> => item.kind === "repeat");
+        const clocks = expression.expressions.filter((item): item is Extract<TemporalExpression, { kind: "point" }> => item.kind === "point" && item.value.kind === "clock");
+        const composable = repeats.length === 1 && clocks.length === 1 && expression.expressions.every((item) => item.kind === "repeat" || (item.kind === "point" && item.value.kind === "clock"));
+        if (composable) {
+          const clock = clocks[0]!.value;
+          if (clock.kind !== "clock") return [];
+          return repeatDates(repeats[0]!, "expression.repeat").map((date) => ({
+            kind: "point_candidate" as const,
+            value: {
+              date: date.toString(),
+              instants: clockInstantsForDate(date, clock.hour, clock.minute, clock.second, "expression.point")
+            }
+          }));
+        }
         const base = expression.expressions.filter((item) => item.kind !== "offset" && item.kind !== "exception" && item.kind !== "adjustment" && item.kind !== "condition").flatMap(evaluate);
         return expression.expressions.filter((item): item is Extract<TemporalExpression, { kind: "offset" }> => item.kind === "offset").reduce((candidates, offset) => applyOffset(candidates, offset.amount, "expression.offset"), base);
       }
