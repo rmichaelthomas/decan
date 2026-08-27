@@ -43,9 +43,10 @@ export function resolveExpression(request: ResolveRequest): ResolveResult {
         return [{ kind: "point_candidate", value: expression.value.kind === "date" ? { date: `${expression.value.year}-${String(expression.value.month).padStart(2, "0")}-${String(expression.value.day).padStart(2, "0")}` } : expression.value.kind === "clock" ? { instants: clockInstants(expression.value.hour, expression.value.minute, expression.value.second, "expression.point") } : { point: expression.value, referenceTime: request.referenceTime } }];
       case "window": {
         if (expression.value.kind === "semantic_window") {
-          const provider = contextFor(context, "custom");
-          if (!provider) addNeed(need("custom", "expression.window"));
-          return [{ kind: "window_candidate", value: { window: expression.value.name, provider: provider ? { id: provider.id, version: provider.version } : undefined, definition: provider?.value } }];
+          const named = expression.value.name.includes(":");
+          const provider = contextFor(context, named ? "custom" : "locale");
+          if (!provider) addNeed(need(named ? "custom" : "locale", "expression.window"));
+          return [{ kind: "window_candidate", value: { window: expression.value.name, ...(named ? { provider: provider ? { id: provider.id, version: provider.version } : undefined } : { locale: provider ? { id: provider.id, version: provider.version } : undefined }), definition: provider?.value } }];
         }
         return [{ kind: "window_candidate", value: { startInstants: clockInstants(expression.value.start.hour, expression.value.start.minute, expression.value.start.second, "expression.window"), endInstants: clockInstants(expression.value.end.hour, expression.value.end.minute, expression.value.end.second, "expression.window") } }];
       }
@@ -83,9 +84,10 @@ export function resolveExpression(request: ResolveRequest): ResolveResult {
         return [];
       case "exception":
       case "adjustment":
+      case "condition":
         return [];
       case "compound": {
-        const base = expression.expressions.filter((item) => item.kind !== "offset" && item.kind !== "exception" && item.kind !== "adjustment").flatMap(evaluate);
+        const base = expression.expressions.filter((item) => item.kind !== "offset" && item.kind !== "exception" && item.kind !== "adjustment" && item.kind !== "condition").flatMap(evaluate);
         return expression.expressions.filter((item): item is Extract<TemporalExpression, { kind: "offset" }> => item.kind === "offset").reduce((candidates, offset) => applyOffset(candidates, offset.amount, "expression.offset"), base);
       }
       default:
@@ -102,6 +104,12 @@ export function resolveExpression(request: ResolveRequest): ResolveResult {
       const predicate = references.find((item) => item.id === exception.predicate.reference);
       if (!predicate) addNeed(need("reference", "expression.exception.predicate"));
       else if (predicate.value === true) values = [];
+    }
+    const conditions = request.expression.expressions.filter((item) => item.kind === "condition");
+    for (const condition of conditions) {
+      const predicate = references.find((item) => item.id === condition.predicate.reference);
+      if (!predicate) addNeed(need("reference", "expression.condition.predicate"));
+      else if (typeof predicate.value !== "object" || predicate.value === null || !("value" in predicate.value) || predicate.value.value !== true) values = [];
     }
     const active = request.expression.expressions.filter((item) => item.kind === "adjustment").filter((adjustment) => {
       const predicate = references.find((item) => item.id === adjustment.when.reference);

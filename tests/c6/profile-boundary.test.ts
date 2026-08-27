@@ -17,8 +17,9 @@ describe("durable-occurrences profile boundary", () => {
         operations: { resolve: "partial" },
         features: expect.arrayContaining([
           { id: "snapshot-temporal-core", support: { resolve: "partial" } },
-          { id: "locale-day-period", support: { resolve: "pending" } },
-          { id: "dynamic-observers", support: { resolve: "pending" } }
+          { id: "explicit-locale-snapshots", support: { resolve: "exact" } },
+          { id: "explicit-observer-snapshots", support: { resolve: "exact" } },
+          { id: "live-dynamic-observers", support: { resolve: "pending" } }
         ])
       }
     });
