@@ -1,8 +1,36 @@
 {
   "name": "decan",
   "version": "0.0.0",
+  "description": "Human-first, agent-friendly temporal intent reference implementation for Proper Time.",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "SPEC.md",
+    "docs/conformance.md",
+    "docs/consumer-evidence-pass.md",
+    "docs/examples.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rmichaelthomas/decan.git"
+  },
+  "keywords": [
+    "temporal-intent",
+    "scheduling",
+    "rrule",
+    "cron",
+    "agents",
+    "proper-time"
+  ],
   "engines": {
     "node": ">=22.13.0"
   },
