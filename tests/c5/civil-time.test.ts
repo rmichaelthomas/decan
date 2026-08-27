@@ -24,4 +24,8 @@ describe("C5 civil-time conformance", () => {
       status: "resolved", candidates: ["2026-08-01T07:30:00Z[example/fixed]"], zoneVersion: "rules-1"
     });
   });
+
+  it("rejects malformed transition data instead of silently normalizing it", () => {
+    expect(resolveCivilTime({ id: "example/fixed", version: "rules-1", initialOffsetMinutes: 90, transitions: [{ at: "not-a-date", offsetMinutes: 90 }], year: 2026, month: 8, day: 1, hour: 9, minute: 0 })).toMatchObject({ status: "conflicted", candidates: [] });
+  });
 });

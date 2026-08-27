@@ -43,4 +43,52 @@ describe("C3 exact feature families", () => {
       ok: true, value: { status: "conflicted", candidates: [] }
     });
   });
+
+  it("applies a calendar offset to an explicit generated candidate", () => {
+    expect(resolveExpression({ ...frame, expression: { kind: "compound", expressions: [{ kind: "point", value: { kind: "date", calendar: "iso8601", year: 2026, month: 8, day: 30 } }, { kind: "offset", amount: { value: 2, unit: "day", mode: "calendar" } }] } })).toMatchObject({
+      ok: true, value: { status: "resolved", candidates: [{ value: { value: { date: "2026-09-01" } } }] }
+    });
+  });
+
+  it("resolves a relation and its offset from the explicit reference snapshot", () => {
+    expect(resolveExpression({ ...frame, references: [{ id: "@approval", version: "event-1", value: { date: "2026-08-30" } }], expression: { kind: "relation", relation: "after", anchor: { kind: "event", reference: "@approval" }, offset: { kind: "offset", amount: { value: 2, unit: "day", mode: "calendar" } } } })).toMatchObject({
+      ok: true, value: { status: "resolved", candidates: [{ value: { value: { date: "2026-09-01" } } }] }
+    });
+  });
+
+  it("applies before relations by subtracting the declared offset", () => {
+    expect(resolveExpression({ ...frame, references: [{ id: "@approval", version: "event-1", value: { date: "2026-08-30" } }], expression: { kind: "relation", relation: "before", anchor: { kind: "event", reference: "@approval" }, offset: { kind: "offset", amount: { value: 2, unit: "day", mode: "calendar" } } } })).toMatchObject({
+      ok: true, value: { status: "resolved", candidates: [{ value: { value: { date: "2026-08-28" } } }] }
+    });
+  });
+
+  it("uses an explicit versioned calendar for business-day offsets", () => {
+    expect(resolveExpression({ ...frame, context: [...frame.context, { kind: "calendar", id: "us", version: "2026.1", value: { closedDates: ["2026-08-31"] } }], expression: { kind: "compound", expressions: [{ kind: "point", value: { kind: "date", calendar: "iso8601", year: 2026, month: 8, day: 28 } }, { kind: "offset", amount: { value: 1, unit: "business_day", mode: "business" } }] } })).toMatchObject({
+      ok: true, value: { status: "resolved", candidates: [{ value: { value: { date: "2026-09-01" } } }] }
+    });
+  });
+
+  it("selects deterministic business-day candidates from the supplied calendar", () => {
+    expect(resolveExpression({ ...frame, context: [...frame.context, { kind: "calendar", id: "us", version: "2026.1", value: { closedDates: ["2026-08-31"] } }], expression: { kind: "selection", filter: { kind: "business_day" }, selector: { kind: "ordinal", value: -1 } } })).toMatchObject({
+      ok: true, value: { status: "resolved", candidates: [{ value: { value: { date: "2026-08-28" } } }] }
+    });
+  });
+
+  it("applies the count horizon to a finite selected candidate set", () => {
+    expect(resolveExpression({ ...frame, expression: { kind: "selection", filter: { kind: "weekday", value: "tuesday" }, selector: { kind: "all" } } })).toMatchObject({
+      ok: true, value: { status: "resolved", candidates: [{ value: { value: { date: "2026-08-04" } } }, { value: { value: { date: "2026-08-11" } } }] }
+    });
+  });
+
+  it("filters generated dates at an explicit until horizon", () => {
+    expect(resolveExpression({ ...frame, horizon: { kind: "until", value: "2026-08-11T23:59:59Z" }, expression: { kind: "selection", filter: { kind: "weekday", value: "tuesday" }, selector: { kind: "all" } } })).toMatchObject({
+      ok: true, value: { status: "resolved", candidates: [{ value: { value: { date: "2026-08-04" } } }, { value: { value: { date: "2026-08-11" } } }] }
+    });
+  });
+
+  it("applies one explicit substitute adjustment", () => {
+    expect(resolveExpression({ ...frame, references: [{ id: "@holiday", version: "calendar-1", value: true }], expression: { kind: "compound", expressions: [{ kind: "point", value: { kind: "date", calendar: "iso8601", year: 2026, month: 8, day: 11 } }, { kind: "adjustment", when: { kind: "event", reference: "@holiday" }, operation: { kind: "substitute", target: { kind: "point", value: { kind: "date", calendar: "iso8601", year: 2026, month: 8, day: 12 } } } }] } })).toMatchObject({
+      ok: true, value: { status: "resolved", candidates: [{ value: { value: { date: "2026-08-12" } } }] }
+    });
+  });
 });

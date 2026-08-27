@@ -38,9 +38,9 @@ describe("C3 explicit resolution core", () => {
   });
 
   it("turns a clock point into an instant using the supplied zone rules", () => {
-    expect(resolveExpression({ ...request, expression: { kind: "point", value: { kind: "clock", hour: 9, minute: 0 } } })).toMatchObject({
+    expect(resolveExpression({ ...request, expression: { kind: "point", value: { kind: "clock", hour: 9, minute: 0, second: 30 } } })).toMatchObject({
       ok: true,
-      value: { status: "resolved", candidates: [{ value: { value: { instants: ["2026-08-27T16:00:00Z[America/Los_Angeles]"] } } }] }
+      value: { status: "resolved", candidates: [{ value: { value: { instants: ["2026-08-27T16:00:30Z[America/Los_Angeles]"] } } }] }
     });
   });
 
