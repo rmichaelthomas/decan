@@ -111,6 +111,12 @@ export function resolveExpression(request: ResolveRequest): ResolveResult {
       case "offset":
         if (expression.amount.mode === "business" && !contextFor(context, "calendar")) addNeed(need("calendar", "expression.offset"));
         return [];
+      case "duration":
+        addNeed(need("feature", "expression.duration", "Duration expressions are spans, not standalone occurrence candidates."));
+        return [];
+      case "boundary":
+        addNeed(need("feature", "expression.boundary", "Boundary expressions are constraints, not standalone occurrence candidates."));
+        return [];
       case "exception":
       case "adjustment":
       case "condition":
@@ -141,9 +147,6 @@ export function resolveExpression(request: ResolveRequest): ResolveResult {
         const base = expression.expressions.filter((item) => item.kind !== "offset" && item.kind !== "exception" && item.kind !== "adjustment" && item.kind !== "condition").flatMap(evaluate);
         return expression.expressions.filter((item): item is Extract<TemporalExpression, { kind: "offset" }> => item.kind === "offset").reduce((candidates, offset) => applyOffset(candidates, offset.amount, "expression.offset"), base);
       }
-      default:
-        addNeed(need("feature", `expression.${expression.kind}`, `Expression kind '${expression.kind}' is not in the exact resolver subset.`));
-        return [];
     }
   };
 

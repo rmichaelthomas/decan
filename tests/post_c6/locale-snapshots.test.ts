@@ -24,7 +24,7 @@ describe("post-C6 locale snapshots", () => {
   it("advertises explicit locale snapshots without claiming live observer support", () => {
     expect(createTemporalCoreRuntime().capabilities()).toMatchObject({
       ok: true,
-      value: { features: expect.arrayContaining([{ id: "explicit-locale-snapshots", support: { resolve: "exact" } }, { id: "live-dynamic-observers", support: { resolve: "pending" } }]) }
+      value: { features: expect.arrayContaining([{ id: "explicit-locale-snapshots", support: { resolve: "exact" } }, { id: "live-dynamic-observers", support: { resolve: "unsupported" } }]) }
     });
   });
 });
