@@ -191,7 +191,7 @@ export type SerializeRequest = Readonly<{ record: TemporalExpression | TemporalI
 export type DeserializeRequest = Readonly<{ bytes: string | Uint8Array }>;
 export type ValidateRequest = Readonly<{ document: NormalizedDocument }>;
 export type ResolveRequest = Readonly<{ expression: TemporalExpression; referenceTime: ZonedDateTime; horizon: ResolutionHorizon; references?: ReadonlyArray<ReferenceSnapshot>; context?: ReadonlyArray<ContextSnapshot> }>;
-export type MaterializeRequest = Readonly<{ intentId: string; intentVersion: number; resolution: TemporalResolution; candidateId: string; occurrenceKey?: string }>;
+export type MaterializeRequest = Readonly<{ intentId: string; intentVersion: number; resolution: TemporalResolution; candidateId: string; recordedAt: ZonedDateTime; occurrenceKey?: string }>;
 export type OccurrenceQuery = Readonly<Record<string, unknown>>;
 export type GetOccurrenceRequest = Readonly<{ id: string }>;
 export type InspectRequest = Readonly<{ value: TemporalExpression | TemporalResolution | Occurrence }>;
@@ -231,12 +231,12 @@ export interface TemporalRuntime {
 export type ResolutionHorizon = Readonly<{ kind: "count"; value: number }> | Readonly<{ kind: "until"; value: ZonedDateTime }> | Readonly<{ kind: "duration"; value: TemporalAmount }>;
 export type ReferenceSnapshot = Readonly<{ id: ReferenceId; version: string; value: unknown }>;
 export type ContextSnapshot = Readonly<{ kind: ContextKind; id: string; version: string; value: unknown }>;
-export type ResolutionNeed = Readonly<{ kind: ContextKind | "reference" | "adjustment_policy"; id?: string; requiredBy: string; reason: string }>;
+export type ResolutionNeed = Readonly<{ kind: ContextKind | "reference" | "feature" | "adjustment_policy"; id?: string; requiredBy: string; reason: string }>;
 export type TemporalCandidate = Readonly<{ kind: "point_candidate" | "window_candidate" | "conditional_candidate"; value: unknown }>;
 export type DerivationStep = Readonly<{ kind: string; inputs: ReadonlyArray<string>; output: string }>;
 export type ResolvedCandidate = Readonly<{ id: string; value: TemporalCandidate; derivation: ReadonlyArray<DerivationStep> }>;
 export type TemporalResolution = Readonly<{
-  id: string;
+  id: HashIdentity;
   status: "resolved" | "partially_resolved" | "unresolved" | "conflicted";
   candidates: ReadonlyArray<ResolvedCandidate>;
   needs: ReadonlyArray<ResolutionNeed>;
@@ -248,7 +248,7 @@ export type TemporalResolution = Readonly<{
 export type DeclaredDependency = Readonly<{ kind: string; id?: string }>;
 export type OccurrencePhase = "materialized" | "ready" | "cancelled" | "closed";
 export type Occurrence = Readonly<{ id: string; intentId: string; intentVersion: number; occurrenceKey: string; phase: OccurrencePhase }>;
-export type OccurrenceEvent = Readonly<{ id: string; kind: string; recordedAt: ZonedDateTime }>;
+export type OccurrenceEvent = Readonly<{ id: string; kind: "materialized" | "ready" | "cancelled" | "closed"; recordedAt: ZonedDateTime }>;
 export type StoredOccurrence = Readonly<{ occurrence: Occurrence; history: ReadonlyArray<OccurrenceEvent> }>;
 export type Page<T> = Readonly<{ items: ReadonlyArray<T>; nextCursor?: string }>;
 export type TemporalOperation = keyof TemporalRuntime;

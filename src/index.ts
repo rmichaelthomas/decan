@@ -8,3 +8,15 @@ export type { SyntaxInterchangeRuntime } from "./runtime/syntax-interchange-runt
 export { createValidationRuntime } from "./runtime/validation-runtime.js";
 export type { ValidationRuntime } from "./runtime/validation-runtime.js";
 export { validateDocument } from "./validation/validate.js";
+export { resolveExpression } from "./resolution/resolve.js";
+export { candidateIdentity, resolutionIdentity } from "./resolution/identity.js";
+export { resolveCivilTime } from "./resolution/civil-time.js";
+export type { CivilTimeRequest, CivilTimeResult } from "./resolution/civil-time.js";
+export { addBusinessDays } from "./providers/business-calendar.js";
+export type { BusinessCalendarSnapshot, BusinessDayRequest } from "./providers/business-calendar.js";
+export { materialize } from "./materialization/materialize.js";
+export { MemoryOccurrenceStore } from "./occurrences/memory-store.js";
+export { SQLiteOccurrenceStore } from "./occurrences/sqlite-store.js";
+export type { OccurrenceStore } from "./occurrences/store.js";
+export { createDurableOccurrencesRuntime, createTemporalCoreRuntime } from "./runtime/temporal-core-runtime.js";
+export type { DurableOccurrencesRuntime, TemporalCoreRuntime } from "./runtime/temporal-core-runtime.js";

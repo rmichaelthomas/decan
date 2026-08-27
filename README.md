@@ -4,7 +4,7 @@ Decan is a reference implementation of a readable, deterministic language for te
 
 ## Current state
 
-The carried-forward baseline implements the verified C0/C1 `syntax-interchange` profile: strict source parsing, normalization, canonical printing, canonical JSON interchange, and stable identities. The C2–C6 implementation plan is tracked in [`docs/superpowers/plans/2026-08-27-decan-c2-c6.md`](docs/superpowers/plans/2026-08-27-decan-c2-c6.md).
+Decan now includes semantic validation, explicit snapshot-only temporal resolution, civil-time gap/fold handling, and SQLite-backed append-only Occurrences. The available profiles are `syntax-interchange`, `temporal-core`, and `durable-occurrences`; the latter is available only through the SQLite-backed runtime adapter. The post-C6 boundary is documented in [`docs/consumer-evidence-pass.md`](docs/consumer-evidence-pass.md).
 
 ## Boundaries
 
