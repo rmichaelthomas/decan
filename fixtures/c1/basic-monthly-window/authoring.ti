@@ -1,0 +1,4 @@
+time
+  window morning
+  select second Tuesday
+  repeat every 1 month
