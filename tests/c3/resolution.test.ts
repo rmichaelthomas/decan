@@ -6,7 +6,7 @@ describe("C3 explicit resolution core", () => {
     expression: { kind: "window" as const, value: { kind: "explicit_window" as const, start: { kind: "clock" as const, hour: 9, minute: 0 }, end: { kind: "clock" as const, hour: 10, minute: 0 } } },
     referenceTime: "2026-08-27T09:00:00-07:00[America/Los_Angeles]",
     horizon: { kind: "count" as const, value: 2 },
-    context: [{ kind: "timezone" as const, id: "America/Los_Angeles", version: "tzdb-2026a", value: "America/Los_Angeles" }]
+    context: [{ kind: "timezone" as const, id: "America/Los_Angeles", version: "tzdb-2026a", value: { initialOffsetMinutes: -420, transitions: [] } }]
   };
 
   it("produces a deterministic finite window candidate from explicit snapshots", () => {
@@ -34,6 +34,13 @@ describe("C3 explicit resolution core", () => {
         candidates: [],
         needs: [{ kind: "timezone", requiredBy: "expression.window", reason: "Missing timezone snapshot" }]
       }
+    });
+  });
+
+  it("turns a clock point into an instant using the supplied zone rules", () => {
+    expect(resolveExpression({ ...request, expression: { kind: "point", value: { kind: "clock", hour: 9, minute: 0 } } })).toMatchObject({
+      ok: true,
+      value: { status: "resolved", candidates: [{ value: { value: { instants: ["2026-08-27T16:00:00Z[America/Los_Angeles]"] } } }] }
     });
   });
 

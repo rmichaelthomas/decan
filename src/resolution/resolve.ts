@@ -1,6 +1,7 @@
 import { Temporal } from "@js-temporal/polyfill";
 import type { ContextKind, ContextSnapshot, ResolveRequest, ResolveResult, ResolutionNeed, TemporalCandidate, TemporalError, TemporalExpression } from "../model/types.js";
 import { candidateIdentity, resolutionIdentity } from "./identity.js";
+import { resolveCivilTime } from "./civil-time.js";
 
 const need = (kind: ContextKind | "reference" | "feature", requiredBy: string, reason = `Missing ${kind} snapshot`): ResolutionNeed => ({ kind, requiredBy, reason });
 const error = (code: string, message: string): TemporalError => ({ category: "resolution", code, message, remediation: "correct_source" });
@@ -17,20 +18,23 @@ export function resolveExpression(request: ResolveRequest): ResolveResult {
   const count = request.horizon.kind === "count" ? request.horizon.value : 1;
   const baseDate = Temporal.PlainDate.from(request.referenceTime.slice(0, 10));
   const points = (dates: ReadonlyArray<string>): TemporalCandidate[] => dates.map((date) => ({ kind: "point_candidate", value: { date } }));
+  const clockInstants = (hour: number, minute: number, requiredBy: string): ReadonlyArray<string> => {
+    const zone = contextFor(context, "timezone");
+    if (!zone || typeof zone.value !== "object" || zone.value === null || !("initialOffsetMinutes" in zone.value) || !("transitions" in zone.value)) { addNeed(need("timezone", requiredBy)); return []; }
+    return resolveCivilTime({ id: zone.id, version: zone.version, initialOffsetMinutes: zone.value.initialOffsetMinutes as number, transitions: zone.value.transitions as ReadonlyArray<{ at: string; offsetMinutes: number }>, year: baseDate.year, month: baseDate.month, day: baseDate.day, hour, minute }).candidates;
+  };
 
   const evaluate = (expression: TemporalExpression): TemporalCandidate[] => {
     switch (expression.kind) {
       case "point":
-        if (expression.value.kind === "clock" && !contextFor(context, "timezone")) addNeed(need("timezone", "expression.point"));
-        return [{ kind: "point_candidate", value: expression.value.kind === "date" ? { date: `${expression.value.year}-${String(expression.value.month).padStart(2, "0")}-${String(expression.value.day).padStart(2, "0")}` } : { point: expression.value, referenceTime: request.referenceTime } }];
+        return [{ kind: "point_candidate", value: expression.value.kind === "date" ? { date: `${expression.value.year}-${String(expression.value.month).padStart(2, "0")}-${String(expression.value.day).padStart(2, "0")}` } : expression.value.kind === "clock" ? { instants: clockInstants(expression.value.hour, expression.value.minute, "expression.point") } : { point: expression.value, referenceTime: request.referenceTime } }];
       case "window": {
         if (expression.value.kind === "semantic_window") {
           const provider = contextFor(context, "custom");
           if (!provider) addNeed(need("custom", "expression.window"));
           return [{ kind: "window_candidate", value: { window: expression.value.name, provider: provider ? { id: provider.id, version: provider.version } : undefined, definition: provider?.value } }];
         }
-        if (!contextFor(context, "timezone")) addNeed(need("timezone", "expression.window"));
-        return [{ kind: "window_candidate", value: { start: expression.value.start, end: expression.value.end, referenceTime: request.referenceTime } }];
+        return [{ kind: "window_candidate", value: { startInstants: clockInstants(expression.value.start.hour, expression.value.start.minute, "expression.window"), endInstants: clockInstants(expression.value.end.hour, expression.value.end.minute, "expression.window") } }];
       }
       case "repeat": {
         const origin = request.lifecycle?.effectiveFrom;
