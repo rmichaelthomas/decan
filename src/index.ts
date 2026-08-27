@@ -5,3 +5,6 @@ export { canonicalizeText, parse, parseDocument } from "./syntax/index.js";
 export { deserializeInterchange, serializeInterchange } from "./interchange/interchange.js";
 export { createSyntaxInterchangeRuntime } from "./runtime/syntax-interchange-runtime.js";
 export type { SyntaxInterchangeRuntime } from "./runtime/syntax-interchange-runtime.js";
+export { createValidationRuntime } from "./runtime/validation-runtime.js";
+export type { ValidationRuntime } from "./runtime/validation-runtime.js";
+export { validateDocument } from "./validation/validate.js";
