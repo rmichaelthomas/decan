@@ -1,17 +1,16 @@
-import { Temporal } from "@js-temporal/polyfill";
-
-export type CivilTimeRequest = Readonly<{ id: string; version: string; year: number; month: number; day: number; hour: number; minute: number }>;
+export type ZoneRuleTransition = Readonly<{ at: string; offsetMinutes: number }>;
+export type CivilTimeRequest = Readonly<{ id: string; version: string; initialOffsetMinutes: number; transitions: ReadonlyArray<ZoneRuleTransition>; year: number; month: number; day: number; hour: number; minute: number }>;
 export type CivilTimeResult = Readonly<{ status: "resolved" | "conflicted"; candidates: ReadonlyArray<string>; zoneVersion: string }>;
 
-/** Resolves only the supplied zone identifier/version; no system zone or clock is consulted. */
+const milliseconds = (value: string): number => Date.parse(value);
+const iso = (value: number): string => new Date(value).toISOString().replace(".000Z", "Z");
+
+/** Resolves from the supplied immutable transition table; it never consults host zone rules. */
 export function resolveCivilTime(request: CivilTimeRequest): CivilTimeResult {
-  const fields = { timeZone: request.id, year: request.year, month: request.month, day: request.day, hour: request.hour, minute: request.minute };
-  const earlier = Temporal.ZonedDateTime.from(fields, { disambiguation: "earlier" });
-  const later = Temporal.ZonedDateTime.from(fields, { disambiguation: "later" });
-  const preserved = (value: Temporal.ZonedDateTime): boolean => (
-    value.year === request.year && value.month === request.month && value.day === request.day && value.hour === request.hour && value.minute === request.minute
-  );
-  if (!preserved(earlier) || !preserved(later)) return { status: "conflicted", candidates: [], zoneVersion: request.version };
-  const values = earlier.epochNanoseconds === later.epochNanoseconds ? [earlier.toString()] : [earlier.toString(), later.toString()];
-  return { status: "resolved", candidates: values, zoneVersion: request.version };
+  const transitions = [...request.transitions].sort((left, right) => left.at < right.at ? -1 : left.at > right.at ? 1 : 0);
+  const offsetAt = (instant: number): number => transitions.filter((transition) => milliseconds(transition.at) <= instant).at(-1)?.offsetMinutes ?? request.initialOffsetMinutes;
+  const local = Date.UTC(request.year, request.month - 1, request.day, request.hour, request.minute);
+  const offsets = [...new Set([request.initialOffsetMinutes, ...transitions.map((transition) => transition.offsetMinutes)])];
+  const candidates = offsets.map((offset) => local - offset * 60_000).filter((instant) => offsetAt(instant) === offsets.find((offset) => local - offset * 60_000 === instant)).sort((left, right) => left - right).map((instant) => `${iso(instant)}[${request.id}]`);
+  return candidates.length === 0 ? { status: "conflicted", candidates: [], zoneVersion: request.version } : { status: "resolved", candidates, zoneVersion: request.version };
 }
