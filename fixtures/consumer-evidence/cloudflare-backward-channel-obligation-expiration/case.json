@@ -1,0 +1,57 @@
+{
+  "consumer": "Cloudflare backward-channel package / Build 1",
+  "intent": "Expire an agent obligation 24 hours after the resource-touch event if verification is still pending.",
+  "sourceEvidence": {
+    "document": "/Users/rmichaelthomas/BusinessBackup/Business/CIA Workspace/cloudflare_contribution_inception_checkpoint_v1_0.md",
+    "sections": ["§9 Build 1 — The backward-channel package"],
+    "consumerBoundary": "The backward-channel package owns obligation lifecycle, receipts, beneficiary fields, post-action verification, declared effects, and any Cloudflare Agents integration; Decan owns only the temporal expiration candidate."
+  },
+  "source": {
+    "surface": "authoring",
+    "textFile": "authoring.ti"
+  },
+  "resolution": {
+    "referenceTime": "2026-08-27T18:00:00Z",
+    "horizon": { "kind": "count", "value": 1 },
+    "context": [],
+    "references": [
+      {
+        "id": "@resource-touch",
+        "version": "cloudflare-contribution-v1.0",
+        "value": { "instant": "2026-08-27T18:00:00Z" }
+      },
+      {
+        "id": "@verification-still-pending",
+        "version": "cloudflare-contribution-v1.0",
+        "value": { "value": true }
+      }
+    ]
+  },
+  "expected": {
+    "validationStatus": "valid",
+    "resolutionStatus": "resolved",
+    "candidateValues": [
+      {
+        "kind": "point_candidate",
+        "value": { "instant": "2026-08-28T18:00:00Z" }
+      }
+    ],
+    "resolutionDerivationKinds": ["resolution_frame"],
+    "candidateDerivationKinds": ["explicit_snapshot_evaluation"],
+    "needs": [],
+    "materialization": {
+      "candidateIndex": 0,
+      "intentId": "cloudflare.backward-channel.obligation-expiration",
+      "intentVersion": 1,
+      "recordedAt": "2026-08-27T18:00:01Z",
+      "asOfBefore": "2026-08-27T18:00:00Z"
+    }
+  },
+  "observedGaps": [
+    {
+      "id": "decan-elapsed-instant-offset",
+      "status": "fixed",
+      "reason": "Backward-channel obligation expiration needs elapsed offsets from an explicit instant-valued event. Decan now applies elapsed second/minute/hour/day/week offsets to instant candidates without adding execution or obligation semantics."
+    }
+  ]
+}

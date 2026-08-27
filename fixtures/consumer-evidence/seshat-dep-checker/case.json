@@ -1,0 +1,63 @@
+{
+  "consumer": "Seshat dependency scanner",
+  "intent": "After Seshat starts its dependency checker, wait 10 seconds, then re-check dependency health every 30 seconds.",
+  "sourceEvidence": {
+    "repository": "/Users/rmichaelthomas/seshat-app",
+    "commit": "056c859",
+    "artifacts": [
+      "seshat.py"
+    ],
+    "consumerBoundary": "Seshat owns process lifecycle, project registry scanning, dependency checks, and daemon execution; Decan owns the temporal interpretation and materializable occurrence candidates for the check cadence."
+  },
+  "source": {
+    "surface": "authoring",
+    "textFile": "authoring.ti"
+  },
+  "resolution": {
+    "referenceTime": "2026-08-27T17:00:00Z",
+    "horizon": { "kind": "count", "value": 3 },
+    "context": [],
+    "references": [
+      {
+        "id": "@process-started",
+        "version": "seshat-app-056c859",
+        "value": { "instant": "2026-08-27T17:00:00Z" }
+      }
+    ]
+  },
+  "expected": {
+    "validationStatus": "valid",
+    "resolutionStatus": "resolved",
+    "candidateValues": [
+      {
+        "kind": "point_candidate",
+        "value": { "instant": "2026-08-27T17:00:10Z" }
+      },
+      {
+        "kind": "point_candidate",
+        "value": { "instant": "2026-08-27T17:00:40Z" }
+      },
+      {
+        "kind": "point_candidate",
+        "value": { "instant": "2026-08-27T17:01:10Z" }
+      }
+    ],
+    "resolutionDerivationKinds": ["resolution_frame"],
+    "candidateDerivationKinds": ["explicit_snapshot_evaluation"],
+    "needs": [],
+    "materialization": {
+      "candidateIndex": 0,
+      "intentId": "seshat.dep-checker",
+      "intentVersion": 1,
+      "recordedAt": "2026-08-27T17:00:01Z",
+      "asOfBefore": "2026-08-27T17:00:00Z"
+    }
+  },
+  "observedGaps": [
+    {
+      "id": "decan-elapsed-subday-repeat-origin",
+      "status": "fixed",
+      "reason": "Seshat's daemon cadence needs elapsed second-scale recurrence anchored to an explicit event-derived instant. Decan now accepts elapsed sub-day repeats and expands them from a resolved origin instant."
+    }
+  ]
+}

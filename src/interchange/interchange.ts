@@ -51,7 +51,7 @@ function decodeExpression(value: unknown): TemporalExpression | undefined {
   if (item.kind === "compound" && only(item, ["kind", "expressions"]) && Array.isArray(item.expressions)) { const expressions = item.expressions.map(decodeExpression); return expressions.every(Boolean) ? item as TemporalExpression : undefined; }
   if (item.kind === "point" && only(item, ["kind", "value"]) && decodeValue(item.value)) return item as TemporalExpression;
   if (item.kind === "window" && only(item, ["kind", "value"]) && decodeValue(item.value)) return item as TemporalExpression;
-  if (item.kind === "repeat" && only(item, ["kind", "every", "unit", "mode"]) && number(item.every) && string(item.unit) && ["day", "week", "month", "quarter", "year"].includes(item.unit) && (item.mode === undefined || item.mode === "civil" || item.mode === "elapsed")) return item as TemporalExpression;
+  if (item.kind === "repeat" && only(item, ["kind", "every", "unit", "mode"]) && number(item.every) && string(item.unit) && ["second", "minute", "hour", "day", "week", "month", "quarter", "year"].includes(item.unit) && (item.mode === undefined || item.mode === "civil" || item.mode === "elapsed")) return item as TemporalExpression;
   if (item.kind === "selection" && only(item, ["kind", "filter", "selector"]) && decodeSelector(item.selector) && (item.filter === undefined || decodeFilter(item.filter))) return item as TemporalExpression;
   if (item.kind === "offset" && only(item, ["kind", "amount"]) && decodeAmount(item.amount)) return item as TemporalExpression;
   if (item.kind === "duration" && only(item, ["kind", "amount", "role"]) && decodeAmount(item.amount)) return item as TemporalExpression;

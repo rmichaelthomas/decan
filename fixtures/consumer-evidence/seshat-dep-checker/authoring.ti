@@ -1,0 +1,17 @@
+intent seshat.dep-checker
+source
+  kind agent
+  value "Seshat re-checks dependency health after a 10 second warm-up, then every 30 seconds while managed projects are running."
+  created-at "2026-08-27T17:00:00Z"
+  actor "seshat-app dep checker"
+time
+  relation
+    after @process-started
+    offset 10 seconds elapsed
+  repeat every 30 seconds elapsed
+reference process-started
+  kind event
+  source "seshat.py __main__ dep-checker thread start"
+lifecycle
+  status active
+  effective-from 2026-08-27

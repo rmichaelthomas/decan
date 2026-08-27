@@ -68,6 +68,16 @@ export function validateDocument(document: NormalizedDocument): ValidateResult {
             `${path}.every`
           ));
         }
+        if (
+          (expression.mode === "elapsed" && !["second", "minute", "hour", "day", "week"].includes(expression.unit)) ||
+          ((expression.mode === undefined || expression.mode === "civil") && !["day", "week", "month", "quarter", "year"].includes(expression.unit))
+        ) {
+          errors.push(validationError(
+            "DECAN-VALIDATION-REPEAT-MODE",
+            "Recurrence units must match their declared mode.",
+            path
+          ));
+        }
         break;
       case "offset":
         validateAmount(expression.amount, `${path}.amount`);

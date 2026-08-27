@@ -19,6 +19,14 @@ export function resolveExpression(request: ResolveRequest): ResolveResult {
   const count = request.horizon.kind === "count" ? request.horizon.value : 1;
   const baseDate = Temporal.PlainDate.from(request.referenceTime.slice(0, 10));
   const points = (dates: ReadonlyArray<string>): TemporalCandidate[] => dates.map((date) => ({ kind: "point_candidate", value: { date } }));
+  const instantValue = (value: string): number => Date.parse(value.replace(/\[[^\]]+\]$/, ""));
+  const instantText = (value: number): string => new Date(value).toISOString().replace(".000Z", "Z");
+  const elapsedMilliseconds = (value: number, unit: string): number | undefined => unit === "second" ? value * 1_000 : unit === "minute" ? value * 60_000 : unit === "hour" ? value * 3_600_000 : unit === "day" ? value * 86_400_000 : unit === "week" ? value * 604_800_000 : undefined;
+  const offsetInstant = (instant: string, amount: Extract<TemporalExpression, { kind: "offset" }>["amount"], direction: number): string | undefined => {
+    const milliseconds = amount.mode === "elapsed" ? elapsedMilliseconds(amount.value, amount.unit) : undefined;
+    const origin = instantValue(instant);
+    return milliseconds === undefined || !Number.isFinite(origin) ? undefined : instantText(origin + milliseconds * direction);
+  };
   const clockInstantsForDate = (date: Temporal.PlainDate, hour: number, minute: number, second: number | undefined, requiredBy: string): ReadonlyArray<string> => {
     const zone = contextFor(context, "timezone");
     if (!zone || typeof zone.value !== "object" || zone.value === null || !("initialOffsetMinutes" in zone.value) || !("transitions" in zone.value)) { addNeed(need("timezone", requiredBy)); return []; }
@@ -32,8 +40,25 @@ export function resolveExpression(request: ResolveRequest): ResolveResult {
     const add = (index: number) => expression.unit === "day" ? { days: expression.every * index } : expression.unit === "week" ? { weeks: expression.every * index } : expression.unit === "month" ? { months: expression.every * index } : expression.unit === "quarter" ? { months: expression.every * 3 * index } : { years: expression.every * index };
     return Array.from({ length: count }, (_, index) => start.add(add(index)));
   };
+  const repeatInstants = (origin: string, expression: Extract<TemporalExpression, { kind: "repeat" }>, requiredBy: string): ReadonlyArray<string> => {
+    const milliseconds = expression.mode === "elapsed" ? elapsedMilliseconds(expression.every, expression.unit) : undefined;
+    const start = instantValue(origin);
+    if (milliseconds === undefined || !Number.isFinite(start)) { addNeed(need("feature", requiredBy, "Elapsed sub-day recurrence requires an explicit instant origin.")); return []; }
+    return Array.from({ length: count }, (_, index) => instantText(start + milliseconds * index));
+  };
   const applyOffset = (candidates: TemporalCandidate[], amount: Extract<TemporalExpression, { kind: "offset" }>["amount"], requiredBy: string, direction = 1): TemporalCandidate[] => candidates.map((candidate) => {
-    if (candidate.kind !== "point_candidate" || typeof candidate.value !== "object" || candidate.value === null || !("date" in candidate.value) || typeof candidate.value.date !== "string") return candidate;
+    if (candidate.kind !== "point_candidate" || typeof candidate.value !== "object" || candidate.value === null) return candidate;
+    if ("instant" in candidate.value && typeof candidate.value.instant === "string") {
+      const instant = offsetInstant(candidate.value.instant, amount, direction);
+      if (!instant) { addNeed(need("feature", requiredBy, "This offset requires an elapsed instant candidate.")); return candidate; }
+      return { kind: "point_candidate", value: { instant } };
+    }
+    if ("instants" in candidate.value && Array.isArray(candidate.value.instants) && candidate.value.instants.every((item) => typeof item === "string")) {
+      const instants = candidate.value.instants.map((instant) => offsetInstant(instant, amount, direction));
+      if (instants.some((instant) => instant === undefined)) { addNeed(need("feature", requiredBy, "This offset requires elapsed instant candidates.")); return candidate; }
+      return { kind: "point_candidate", value: { instants } };
+    }
+    if (!("date" in candidate.value) || typeof candidate.value.date !== "string") return candidate;
     if (amount.mode === "business") {
       const calendar = contextFor(context, "calendar");
       if (!calendar || typeof calendar.value !== "object" || calendar.value === null || !("closedDates" in calendar.value)) { addNeed(need("calendar", requiredBy)); return candidate; }
@@ -80,7 +105,7 @@ export function resolveExpression(request: ResolveRequest): ResolveResult {
       case "relation": {
         const reference = references.find((item) => item.id === expression.anchor.reference);
         if (!reference) addNeed(need("reference", "expression.relation.anchor"));
-        const candidate = reference && typeof reference.value === "object" && reference.value !== null && "date" in reference.value && typeof reference.value.date === "string" ? [{ kind: "point_candidate" as const, value: { date: reference.value.date } }] : reference ? [{ kind: "point_candidate" as const, value: { relation: expression.relation, anchor: reference.value } }] : [];
+        const candidate = reference && typeof reference.value === "object" && reference.value !== null && "date" in reference.value && typeof reference.value.date === "string" ? [{ kind: "point_candidate" as const, value: { date: reference.value.date } }] : reference && typeof reference.value === "object" && reference.value !== null && "instant" in reference.value && typeof reference.value.instant === "string" ? [{ kind: "point_candidate" as const, value: { instant: reference.value.instant } }] : reference ? [{ kind: "point_candidate" as const, value: { relation: expression.relation, anchor: reference.value } }] : [];
         return expression.offset ? applyOffset(candidate, expression.offset.amount, "expression.relation.offset", expression.relation === "before" ? -1 : 1) : candidate;
       }
       case "offset":
@@ -93,6 +118,14 @@ export function resolveExpression(request: ResolveRequest): ResolveResult {
       case "compound": {
         const repeats = expression.expressions.filter((item): item is Extract<TemporalExpression, { kind: "repeat" }> => item.kind === "repeat");
         const clocks = expression.expressions.filter((item): item is Extract<TemporalExpression, { kind: "point" }> => item.kind === "point" && item.value.kind === "clock");
+        const elapsedInstantRepeat = repeats.length === 1 && repeats[0]!.mode === "elapsed" && ["second", "minute", "hour"].includes(repeats[0]!.unit) && expression.expressions.filter((item) => item.kind !== "repeat").length === 1;
+        if (elapsedInstantRepeat) {
+          const origin = evaluate(expression.expressions.find((item) => item.kind !== "repeat")!);
+          return origin.flatMap((candidate) => {
+            if (candidate.kind !== "point_candidate" || typeof candidate.value !== "object" || candidate.value === null || !("instant" in candidate.value) || typeof candidate.value.instant !== "string") { addNeed(need("feature", "expression.repeat", "Elapsed sub-day recurrence requires an explicit instant origin.")); return []; }
+            return repeatInstants(candidate.value.instant, repeats[0]!, "expression.repeat").map((instant) => ({ kind: "point_candidate" as const, value: { instant } }));
+          });
+        }
         const composable = repeats.length === 1 && clocks.length === 1 && expression.expressions.every((item) => item.kind === "repeat" || (item.kind === "point" && item.value.kind === "clock"));
         if (composable) {
           const clock = clocks[0]!.value;

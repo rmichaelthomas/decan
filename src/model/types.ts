@@ -74,7 +74,7 @@ export type WindowExpression = Readonly<{ kind: "window"; value: WindowValue }>;
 export type RepeatExpression = Readonly<{
   kind: "repeat";
   every: number;
-  unit: "day" | "week" | "month" | "quarter" | "year";
+  unit: "second" | "minute" | "hour" | "day" | "week" | "month" | "quarter" | "year";
   mode?: "civil" | "elapsed";
 }>;
 export type SelectionExpression = Readonly<{ kind: "selection"; filter?: TemporalFilter; selector: TemporalSelector }>;

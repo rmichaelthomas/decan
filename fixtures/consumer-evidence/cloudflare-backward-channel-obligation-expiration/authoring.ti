@@ -1,0 +1,21 @@
+intent cloudflare.backward-channel.obligation-expiration
+source
+  kind natural_language
+  value "An agent obligation created when a resource is touched expires 24 hours later if verification is still pending."
+  created-at "2026-08-25T00:00:00Z"
+  actor "cloudflare_contribution_inception_checkpoint_v1_0"
+time
+  relation
+    after @resource-touch
+    offset 24 hours elapsed
+  condition gate
+    when @verification-still-pending
+reference resource-touch
+  kind event
+  source "Cloudflare Contribution Build 1 obligation lifecycle"
+reference verification-still-pending
+  kind state
+  source "Cloudflare Contribution Build 1 post-action verification status"
+lifecycle
+  status active
+  effective-from 2026-08-25

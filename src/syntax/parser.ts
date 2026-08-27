@@ -115,10 +115,10 @@ function parseWindow(value: string, surface: ParseRequest["surface"]): WindowExp
 }
 
 function parseRepeat(value: string, surface: ParseRequest["surface"]): RepeatExpression | undefined {
-  const match = /^(?:(\d+) )?(day|week|month|quarter|year)s?(?: (elapsed))?$/.exec(value);
+  const match = /^(?:(\d+) )?(second|minute|hour|day|week|month|quarter|year)s?(?: (elapsed))?$/.exec(value);
   if (!match) return undefined;
   const every = Number(match[1] ?? "1"); const unit = match[2] as RepeatExpression["unit"];
-  if (every < 1 || (match[3] && !["day", "week"].includes(unit))) return undefined;
+  if (every < 1 || (["second", "minute", "hour"].includes(unit) && !match[3]) || (match[3] && !["second", "minute", "hour", "day", "week"].includes(unit))) return undefined;
   if (surface === "canonical" && ((every === 1 && match[1] !== undefined) || (every > 1 && !value.includes(`${unit}s`)))) return undefined;
   return match[3] ? { kind: "repeat", every, unit, mode: "elapsed" } : { kind: "repeat", every, unit, mode: "civil" };
 }
