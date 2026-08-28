@@ -6,7 +6,7 @@ describe("post-C6 cron and RRULE adapters", () => {
     expect(importCronExpression({
       cron: "0 9 * * 1",
       effectiveFrom: { kind: "date", calendar: "iso8601", year: 2026, month: 8, day: 27 }
-    })).toEqual({
+    })).toMatchObject({
       ok: true,
       value: {
         source: { kind: "imported_cron", value: "0 9 * * 1" },
@@ -37,7 +37,7 @@ describe("post-C6 cron and RRULE adapters", () => {
     expect(importRRule({
       dtstart: "20260831T090000",
       rrule: "FREQ=WEEKLY;INTERVAL=1;BYDAY=MO"
-    })).toEqual({
+    })).toMatchObject({
       ok: true,
       value: {
         source: { kind: "imported_rrule", value: "DTSTART:20260831T090000\nRRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=MO" },
@@ -74,7 +74,7 @@ describe("post-C6 cron and RRULE adapters", () => {
         ]
       },
       lifecycle: { status: "active", version: 1, effectiveFrom: { kind: "date", calendar: "iso8601", year: 2026, month: 8, day: 31 } }
-    })).toEqual({
+    })).toMatchObject({
       ok: true,
       value: {
         contentLines: ["DTSTART:20260831T090000", "RRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=MO"],

@@ -20,6 +20,8 @@ export { astronomicalSnapshot, availabilitySnapshot, businessCalendarSnapshot, c
 export type { AstronomicalSnapshot, AvailabilitySnapshot, BusinessCalendarContextSnapshot, CustomContextSnapshot, ExplicitReferenceSnapshot, LocationSnapshot, ParticipantSnapshot, TimezoneSnapshot, ZoneRuleTransitionSnapshot } from "./providers/context-snapshots.js";
 export { exportRRule, importCronExpression, importRRule } from "./adapters/cron-rrule.js";
 export type { CronImportRequest, ImportedScheduleSource, RRuleExport, RRuleExportRequest, RRuleImportRequest, ScheduleAdapterImport } from "./adapters/cron-rrule.js";
+export { exactLossReport, unsupportedLossReport } from "./adapters/loss-report.js";
+export type { TemporalLossReport } from "./adapters/loss-report.js";
 export { observationReference } from "./providers/observer-snapshots.js";
 export type { ObserverKind, ObserverSnapshot } from "./providers/observer-snapshots.js";
 export { localeSnapshot } from "./providers/locale-snapshots.js";

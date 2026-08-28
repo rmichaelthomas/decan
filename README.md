@@ -38,7 +38,7 @@ lifecycle
 - Exact snapshot-only temporal resolution with a public resolver support matrix.
 - Explicit context snapshot adapters for timezone, calendar, locale, observer/reference facts, location, participant, availability, astronomical, and custom context.
 - Civil-time gap/fold handling from pinned timezone rules.
-- Loss-aware cron/RRULE adapters for a small exact weekly subset.
+- Loss-aware cron/RRULE adapters for a small exact weekly subset, each with a `TemporalLossReport` that records exact preservation or an explicit unsupported conversion.
 - SQLite-backed append-only Occurrences with materialization/replay checks.
 - Executable consumer evidence for 5xFive, Seshat, and the Cloudflare backward-channel package.
 - A CLI for direct parsing, validation, support classification, resolution, adapter interop, and materialization.
@@ -66,7 +66,7 @@ The first exact adapter subset supports:
 - RRULE shaped like `FREQ=WEEKLY;INTERVAL=1;BYDAY=MO` with explicit local `DTSTART`;
 - Decan weekly civil recurrence plus one clock point and lifecycle origin exported to `DTSTART` + `RRULE`.
 
-Unsupported or lossy shapes fail closed with capability errors. Decan never emits an apparently valid cron/RRULE expression while pretending discarded semantics were preserved.
+Unsupported or lossy shapes fail closed with capability errors. Every adapter result includes a `TemporalLossReport`: exact conversions name the preserved semantics, while rejected conversions name the consequence and remediation. Decan never emits an apparently valid cron/RRULE expression while pretending discarded semantics were preserved.
 
 ## Boundaries
 
@@ -81,6 +81,8 @@ Missing context remains a typed `need`; supplied context must be explicit eviden
 - [docs/examples.md](docs/examples.md) — examples for source, snapshots, resolution, adapters, and materialization.
 - [docs/proper-time-corpus.md](docs/proper-time-corpus.md) — public corpus map for real temporal-intent evidence cases.
 - [docs/launch-argument.md](docs/launch-argument.md) — long-form public argument for the layer before schedules.
+- [Scientific-Time Spike](docs/scientific-time-spike.md) — mission-planning evidence and the scientific-time escalation gate.
+- [Managed Services Exploration](docs/managed-services-exploration.md) — open-core and managed-service product boundary.
 - [site/index.html](site/index.html) — standalone landing page for Decan / Proper Time.
 - [fixtures/consumer-evidence/](fixtures/consumer-evidence/) — executable real-consumer corpus.
 - [references/](references/) — locked checkpoint chain and design history.
@@ -143,12 +145,15 @@ Decan currently requires Node.js `>=22.13.0` because the durable Occurrences ada
 
 ## Status
 
-The initial primitive is built out through the v1.2 world-readiness checkpoint, v1.3 public-packaging pass, and v1.4 public-interface sprint:
+The initial primitive is built out through the v1.2 world-readiness checkpoint, v1.3 public-packaging pass, v1.4 public-interface sprint, and v1.5 release, loss-evidence, scientific-time, and service-exploration sprint:
 
 - `temporal-core.resolve` is exact over Decan's declared support matrix.
 - cron/RRULE interop has an exact fail-closed subset.
 - live dynamic observers are closed as unsupported in core.
 - public packaging now states the Decan / Proper Time positioning, support claims, examples, and non-goals.
 - CLI and MCP surfaces now make Decan directly usable by humans, scripts, CI, and agent hosts.
+- adapter outputs now carry `TemporalLossReport` evidence for exact and unsupported cron/RRULE conversions.
+- the scientific-time spike demonstrates satellite and mission-planning applicability with pinned astronomical snapshots, without claiming scientific-scale transformation or ephemeris authority.
+- service exploration defines managed snapshot, MCP, replay, and connector possibilities that remain outside the open temporal core.
 
-No license has been declared yet; treat the repository as not open-source licensed until that is chosen explicitly.
+Decan is licensed under [Apache-2.0](LICENSE). The core, reference implementation, and public specification materials are reusable infrastructure; managed snapshot, MCP, audit, and connector services remain separate products.

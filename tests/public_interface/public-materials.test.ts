@@ -36,4 +36,14 @@ describe("public dissemination materials", () => {
     expect(landing).toContain("MCP");
     expect(landing).toContain("Proper Time Corpus");
   });
+
+  test("keeps the README aligned with the v1.5 release posture", () => {
+    const readme = read("README.md");
+
+    expect(readme).toContain("v1.5");
+    expect(readme).toContain("TemporalLossReport");
+    expect(readme).toContain("Scientific-Time Spike");
+    expect(readme).toContain("Managed Services Exploration");
+    expect(readme).toContain("Apache-2.0");
+  });
 });
