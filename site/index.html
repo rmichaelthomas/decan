@@ -3,240 +3,41 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Decan — Proper Time for human-first, agent-friendly scheduling</title>
-    <meta name="description" content="Decan is a reference implementation for Proper Time: temporal intent as meaning plus evidence before calendars, schedulers, and agents act.">
+    <meta name="theme-color" content="#101a24">
+    <title>Decan | Proper Time, before schedules act</title>
+    <meta name="description" content="Decan is the reference implementation for Proper Time: temporal meaning plus explicit evidence before calendars, schedulers, and agents act.">
     <style>
-      :root {
-        color-scheme: light;
-        --paper: #f4efe4;
-        --ink: #211b14;
-        --muted: #746956;
-        --rule: #c9bda8;
-        --accent: #9f3d24;
-        --accent-2: #244f72;
-        --field: #ede4d3;
-        --shadow: 0 24px 70px rgba(62, 45, 27, .14);
-        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-      }
-
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        background:
-          radial-gradient(circle at 18% 8%, rgba(159, 61, 36, .12), transparent 34rem),
-          linear-gradient(135deg, rgba(36, 79, 114, .08), transparent 28rem),
-          var(--paper);
-        color: var(--ink);
-      }
-
-      main { width: min(1180px, calc(100vw - 36px)); margin: 0 auto; }
-      header {
-        display: grid;
-        grid-template-columns: 1.1fr .9fr;
-        gap: clamp(2rem, 7vw, 7rem);
-        padding: clamp(3rem, 8vw, 7rem) 0 4rem;
-        border-bottom: 1px solid var(--rule);
-      }
-
-      .eyebrow {
-        letter-spacing: .18em;
-        text-transform: uppercase;
-        color: var(--accent);
-        font: 700 .78rem ui-sans-serif, system-ui, sans-serif;
-      }
-
-      h1 {
-        margin: 1rem 0 1.25rem;
-        font-size: clamp(4rem, 12vw, 11rem);
-        line-height: .78;
-        letter-spacing: -.08em;
-      }
-
-      .lede {
-        max-width: 42rem;
-        color: var(--muted);
-        font-size: clamp(1.25rem, 2.4vw, 1.85rem);
-        line-height: 1.18;
-      }
-
-      .hero-card {
-        align-self: end;
-        background: rgba(255, 252, 246, .62);
-        border: 1px solid var(--rule);
-        box-shadow: var(--shadow);
-        padding: clamp(1rem, 3vw, 2rem);
-        transform: rotate(-1.25deg);
-      }
-
-      pre {
-        margin: 0;
-        white-space: pre-wrap;
-        font: 500 .9rem/1.55 "SF Mono", ui-monospace, Menlo, monospace;
-      }
-
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: .8rem;
-        margin-top: 2rem;
-      }
-
-      a.button {
-        color: var(--ink);
-        text-decoration: none;
-        border: 1px solid var(--ink);
-        padding: .78rem 1rem;
-        font: 700 .88rem ui-sans-serif, system-ui, sans-serif;
-        text-transform: uppercase;
-        letter-spacing: .08em;
-      }
-
-      a.button.primary { background: var(--ink); color: var(--paper); }
-
-      section {
-        padding: clamp(3rem, 7vw, 6rem) 0;
-        border-bottom: 1px solid var(--rule);
-      }
-
-      h2 {
-        margin: 0 0 1rem;
-        font-size: clamp(2rem, 5vw, 4.8rem);
-        line-height: .92;
-        letter-spacing: -.05em;
-      }
-
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: clamp(1rem, 3vw, 2rem);
-      }
-
-      .panel {
-        border-top: 3px solid var(--accent);
-        padding-top: 1rem;
-        color: var(--muted);
-        font-size: 1.08rem;
-        line-height: 1.45;
-      }
-
-      .panel strong { color: var(--ink); display: block; margin-bottom: .5rem; }
-
-      .split {
-        display: grid;
-        grid-template-columns: .8fr 1.2fr;
-        gap: clamp(1.5rem, 5vw, 5rem);
-        align-items: start;
-      }
-
-      .terminal {
-        background: #211b14;
-        color: #f4efe4;
-        padding: 1.25rem;
-        box-shadow: var(--shadow);
-      }
-
-      .corpus {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1px;
-        background: var(--rule);
-        border: 1px solid var(--rule);
-      }
-
-      .case {
-        background: rgba(255, 252, 246, .54);
-        padding: clamp(1.1rem, 3vw, 1.8rem);
-      }
-
-      .case h3 { margin-top: 0; font-size: 1.35rem; }
-      .case p, .split p { color: var(--muted); line-height: 1.5; }
-
-      footer {
-        padding: 3rem 0 5rem;
-        color: var(--muted);
-        font: .95rem/1.5 ui-sans-serif, system-ui, sans-serif;
-      }
-
-      @media (max-width: 820px) {
-        header, .split, .grid, .corpus { grid-template-columns: 1fr; }
-        .hero-card { transform: none; }
-        h1 { font-size: clamp(4rem, 23vw, 7rem); }
-      }
+      :root { color-scheme: dark; --night: oklch(17% .026 251); --night-raised: oklch(21% .03 251); --paper: oklch(93% .018 82); --muted: oklch(75% .025 82); --copper: oklch(71% .13 56); --signal: oklch(70% .095 227); --rule: oklch(43% .035 251); --focus: oklch(83% .15 92); --sans: "Arial Narrow", "Aptos Narrow", "Helvetica Neue", Arial, sans-serif; --notation: ui-monospace, "SFMono-Regular", Consolas, monospace; }
+      * { box-sizing: border-box; } html { scroll-behavior: smooth; } body { margin: 0; background: var(--night); color: var(--paper); font-family: var(--sans); text-rendering: optimizeLegibility; } a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .18em; } a:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; } code, pre { font-family: var(--notation); } pre { margin: 0; overflow-x: auto; white-space: pre-wrap; } .shell { width: min(1240px, calc(100% - 2.5rem)); margin: 0 auto; }
+      .masthead { min-height: 92vh; display: grid; align-items: end; border-bottom: 1px solid var(--rule); } .topline { display: flex; justify-content: space-between; gap: 1rem; padding: 1.35rem 0; font: 700 .74rem/1 var(--notation); letter-spacing: .12em; text-transform: uppercase; } .topline a { color: var(--muted); } .masthead-grid { display: grid; grid-template-columns: 1.12fr .88fr; gap: clamp(2rem, 7vw, 8rem); padding: clamp(5rem, 12vw, 11rem) 0 clamp(3rem, 6vw, 6rem); } .kicker { margin: 0 0 1.25rem; color: var(--copper); font: 700 .78rem/1.2 var(--notation); letter-spacing: .12em; text-transform: uppercase; } h1, h2, h3, p { margin-top: 0; } h1 { max-width: 10ch; margin-bottom: 1.5rem; font-size: clamp(4.4rem, 11vw, 10.5rem); line-height: .82; letter-spacing: -.075em; } .lede { max-width: 31ch; margin-bottom: 2rem; color: var(--muted); font-size: clamp(1.35rem, 2.5vw, 2.1rem); line-height: 1.08; } .actions { display: flex; flex-wrap: wrap; gap: .8rem; } .action { display: inline-flex; align-items: center; min-height: 3rem; border: 1px solid var(--rule); padding: .75rem 1rem; font: 700 .78rem/1 var(--notation); letter-spacing: .08em; text-decoration: none; text-transform: uppercase; } .action:hover { border-color: var(--copper); color: var(--copper); } .action.primary { background: var(--paper); border-color: var(--paper); color: var(--night); } .instrument { align-self: end; border: 1px solid var(--rule); background: var(--night-raised); padding: clamp(1.25rem, 3vw, 2rem); } .instrument-label { color: var(--signal); font: 700 .72rem/1.4 var(--notation); letter-spacing: .1em; text-transform: uppercase; } .instrument pre { margin-top: 1.2rem; color: var(--paper); font-size: clamp(.78rem, 1.2vw, .98rem); line-height: 1.65; }
+      section { border-bottom: 1px solid var(--rule); padding: clamp(4rem, 9vw, 8rem) 0; } .section-head { display: grid; grid-template-columns: .55fr 1.45fr; gap: 2rem; margin-bottom: clamp(2rem, 5vw, 4rem); } .section-number { color: var(--copper); font: 700 .78rem/1 var(--notation); letter-spacing: .1em; } h2 { max-width: 14ch; margin-bottom: 0; font-size: clamp(2.8rem, 7vw, 6.5rem); line-height: .88; letter-spacing: -.065em; } .section-copy { max-width: 48ch; color: var(--muted); font-size: 1.18rem; line-height: 1.45; }
+      .trace { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--rule); } .trace-step { min-height: 18rem; display: grid; align-content: space-between; gap: 1rem; padding: 1.25rem; border-right: 1px solid var(--rule); } .trace-step:last-child { border-right: 0; } .trace-step:nth-child(odd) { background: oklch(19% .03 251); } .trace-index { color: var(--copper); font: 700 .78rem/1 var(--notation); } .trace-step h3 { margin-bottom: .5rem; font-size: 1.45rem; letter-spacing: -.03em; } .trace-step p { margin: 0; color: var(--muted); line-height: 1.4; } .trace-data { color: var(--signal); font: 600 .78rem/1.55 var(--notation); } .trace-note { margin: 1.25rem 0 0; color: var(--muted); font-size: .9rem; }
+      .entry-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(2rem, 7vw, 8rem); } .command-sheet { padding: 1.5rem; border: 1px solid var(--rule); background: var(--night-raised); } .command-sheet pre { color: var(--signal); font-size: .86rem; line-height: 1.7; } .entry-list { display: grid; gap: 0; border-top: 1px solid var(--rule); } .entry-list a { display: grid; grid-template-columns: 3rem 1fr auto; gap: 1rem; align-items: baseline; padding: 1.1rem 0; border-bottom: 1px solid var(--rule); text-decoration: none; } .entry-list a:hover { color: var(--copper); } .entry-list span { color: var(--muted); font: .75rem/1 var(--notation); } .entry-list strong { font-size: 1.25rem; }
+      .proof-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: clamp(2rem, 8vw, 10rem); } .proof-claim { margin: 0; font-size: clamp(2rem, 4vw, 4rem); line-height: .96; letter-spacing: -.05em; } .boundary-list { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--rule); } .boundary-list li { display: grid; grid-template-columns: 1.2rem 1fr; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--rule); color: var(--muted); font-size: 1.1rem; line-height: 1.4; } .boundary-list li::before { content: "×"; color: var(--copper); font: 1.25rem/1 var(--notation); }
+      .domain-grid { display: grid; grid-template-columns: 1fr 1.1fr .9fr; gap: 0; border: 1px solid var(--rule); } .domain { min-height: 17rem; padding: 1.5rem; border-right: 1px solid var(--rule); } .domain:last-child { border-right: 0; } .domain:nth-child(2) { background: var(--night-raised); } .domain h3 { max-width: 11ch; margin-bottom: 3rem; font-size: 1.8rem; line-height: .96; letter-spacing: -.045em; } .domain p { max-width: 30ch; margin: 0; color: var(--muted); line-height: 1.45; }
+      .horizon { background: var(--paper); color: var(--night); } .horizon .section-number { color: oklch(52% .13 56); } .horizon .section-copy { color: oklch(34% .025 251); } .horizon-links { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 2.5rem; } .horizon-links a { border-bottom: 2px solid var(--copper); color: var(--night); font: 700 .82rem/1.2 var(--notation); text-decoration: none; } footer { display: flex; justify-content: space-between; gap: 2rem; padding: 2rem 0 4rem; color: var(--muted); font-size: .9rem; line-height: 1.45; } footer p { max-width: 46ch; margin: 0; }
+      .js .trace-step { opacity: 0; transform: translateY(14px); animation: reveal .55s cubic-bezier(.16, 1, .3, 1) forwards; animation-delay: calc(var(--step) * 120ms); } @keyframes reveal { to { opacity: 1; transform: translateY(0); } } @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } .js .trace-step { opacity: 1; transform: none; } } @media (max-width: 760px) { .shell { width: min(100% - 1.5rem, 1240px); } .masthead { min-height: auto; } .masthead-grid, .section-head, .entry-grid, .proof-grid { grid-template-columns: 1fr; } .trace, .domain-grid { grid-template-columns: 1fr; } .trace-step, .domain { min-height: auto; border-right: 0; border-bottom: 1px solid var(--rule); } .trace-step:last-child, .domain:last-child { border-bottom: 0; } h1 { font-size: clamp(4.2rem, 19vw, 6.8rem); } footer { display: block; } footer p + p { margin-top: 1rem; } }
     </style>
   </head>
   <body>
-    <main>
-      <header>
-        <div>
-          <div class="eyebrow">Proper Time / reference implementation</div>
-          <h1>Decan</h1>
-          <p class="lede">A human-first, agent-friendly temporal intent primitive: meaning plus evidence before calendars, schedulers, cron, RRULE, or agents act.</p>
-          <div class="actions">
-            <a class="button primary" href="../SPEC.md">Read the spec</a>
-            <a class="button" href="../docs/proper-time-corpus.md">Proper Time Corpus</a>
-            <a class="button" href="../docs/launch-argument.md">Launch argument</a>
-          </div>
-        </div>
-        <div class="hero-card">
-          <pre>time
-  relation
-    after @approval
-    offset 3 business days
-  except @account-suspended
+    <header class="masthead"><div class="shell"><nav class="topline" aria-label="Primary navigation"><span>Decan / Proper Time</span><a href="#entry-points">Entry points ↓</a></nav><div class="masthead-grid"><div><p class="kicker">Reference implementation</p><h1>The layer before schedules act.</h1><p class="lede">Decan preserves temporal meaning and explicit evidence before a calendar, scheduler, workflow, or agent turns that meaning into action.</p><div class="actions"><a class="action primary" href="../SPEC.md">Read the specification</a><a class="action" href="../docs/proper-time-corpus.md">Inspect the corpus</a></div></div><aside class="instrument" aria-label="Example Decan temporal intent"><div class="instrument-label">Readable temporal intent</div><pre>time
+  relation after @approval
+  offset 3 business days
 context
   timezone @domain-timezone
-  calendar @business-calendar</pre>
-        </div>
-      </header>
-
-      <section class="grid">
-        <div class="panel"><strong>The layer before schedules.</strong> Decan preserves what someone meant about time before that intent is flattened into a trigger, timestamp, or job.</div>
-        <div class="panel"><strong>Human-first.</strong> Temporal source is readable, reviewable, and centered on semantic blocks instead of opaque recurrence strings.</div>
-        <div class="panel"><strong>Agent-friendly.</strong> Parse, canonicalize, validate, classify support, resolve with snapshots, materialize candidates, and report gaps without ambient guessing.</div>
-      </section>
-
-      <section class="split">
-        <div>
-          <h2>Use it from a shell or an agent host.</h2>
-          <p>The CLI is the direct operational surface. The MCP server exposes the same Decan core as model-callable tools, resources, and prompts.</p>
-        </div>
-        <div class="terminal">
-          <pre>decan canonicalize intent.ti
+  calendar @business-calendar</pre></aside></div></div></header>
+    <main>
+      <section id="evidence"><div class="shell"><div class="section-head"><span class="section-number">01 / Evidence</span><div><h2>Meaning becomes a trace, not a guess.</h2><p class="section-copy">Decan's core is deliberately small. It canonicalizes intent, requires pinned context, resolves only its declared exact subset, and makes a chosen result replayable.</p></div></div><figure><div class="trace" aria-label="Decan evidence trace"><article class="trace-step"><span class="trace-index">01</span><div><h3>Intent</h3><p>Readable source keeps a human or agent's temporal meaning intact.</p></div><code class="trace-data">after @approval<br>+ 3 business days</code></article><article class="trace-step"><span class="trace-index">02</span><div><h3>Pinned context</h3><p>Timezone, calendar, observer, and other facts arrive as evidence, never ambient guesses.</p></div><code class="trace-data">timezone: America/New_York<br>calendar: v2026.08</code></article><article class="trace-step"><span class="trace-index">03</span><div><h3>Exact candidate</h3><p>The resolver returns a finite candidate or says what it still needs.</p></div><code class="trace-data">2026-08-31T13:00:00Z<br>support: exact</code></article><article class="trace-step"><span class="trace-index">04</span><div><h3>Occurrence</h3><p>A selected candidate can be materialized and replayed without claiming it was fulfilled.</p></div><code class="trace-data">occurrence: sha256:…<br>replay: match</code></article></div><figcaption class="trace-note">intent → pinned context → exact candidate → materialized occurrence. <a href="../docs/conformance.md">Read the implemented support and non-goals.</a></figcaption></figure></div></section>
+      <section id="entry-points"><div class="shell"><div class="section-head"><span class="section-number">02 / Entry points</span><div><h2>Read it. Run it. Give it to an agent.</h2></div></div><div class="entry-grid"><div class="command-sheet"><div class="instrument-label">CLI and stdio MCP</div><pre>decan canonicalize intent.ti
 decan validate intent.ti
-decan resolve intent.ti --reference-time 2026-08-27T12:00:00Z --horizon-count 3 --context context.json
-decan import-cron "0 9 * * 1" --effective-from 2026-08-27
-decan-mcp</pre>
-        </div>
-      </section>
-
-      <section>
-        <h2>Proof, not vibes.</h2>
-        <div class="corpus">
-          <article class="case">
-            <h3>5xFive / Banneker 1 Automations</h3>
-            <p>Weekly product automation imported from cron, preserved as Decan temporal intent, resolved with explicit timezone evidence.</p>
-          </article>
-          <article class="case">
-            <h3>Seshat dependency scan scheduling</h3>
-            <p>Maintenance cadence and policy-shaped scheduling represented as source, context, support, and honest gaps.</p>
-          </article>
-          <article class="case">
-            <h3>Cloudflare backward-channel package</h3>
-            <p>Obligation and expiration timing modeled as relations, boundaries, conditions, and replayable evidence.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="split">
-        <div>
-          <h2>What it refuses.</h2>
-        </div>
-        <p>Decan does not read ambient locale, timezone, clock, geolocation, network, account state, or live observers. It does not authorize, execute, retry, verify, or fulfill work. If context is missing, Decan says what it needs.</p>
-      </section>
-
-      <footer>
-        Decan is currently a private reference implementation with no license declared. Treat Proper Time as a standards-shaped proposal and Decan as the executable argument.
-      </footer>
+decan resolve intent.ti --context context.json
+decan import-cron "0 9 * * 1"
+decan-mcp</pre></div><nav class="entry-list" aria-label="Decan public materials"><a href="../SPEC.md"><span>01</span><strong>Specification</strong><span>semantic model ↗</span></a><a href="../docs/proper-time-corpus.md"><span>02</span><strong>Corpus</strong><span>evidence cases ↗</span></a><a href="../README.md#cli"><span>03</span><strong>CLI</strong><span>human and script use ↗</span></a><a href="../README.md#mcp"><span>04</span><strong>MCP</strong><span>agent-host interface ↗</span></a></nav></div></div></section>
+      <section id="proof"><div class="shell"><div class="section-head"><span class="section-number">03 / Boundary</span><div><h2>Useful because it refuses to pretend.</h2></div></div><div class="proof-grid"><p class="proof-claim">The core is exact where it says it is, explicit where it is not, and never becomes the authority that acts.</p><ul class="boundary-list"><li>No ambient clock, timezone, locale, geolocation, network, or live observer.</li><li>No authorization, execution, retry, verification, or fulfillment of work.</li><li>No silent cron or RRULE approximation: adapters return a TemporalLossReport for exact or unsupported conversion.</li><li>No claim that a timestamp alone contains the meaning someone intended.</li></ul></div></div></section>
+      <section id="evidence-domains"><div class="shell"><div class="section-head"><span class="section-number">04 / Corpus</span><div><h2>Three shapes of time that do not fit a naked trigger.</h2></div></div><div class="domain-grid"><article class="domain"><h3>Workflow automation</h3><p>A recurring product action needs lifecycle origin and a selected timezone, not just five cron fields.</p></article><article class="domain"><h3>Policy-shaped maintenance</h3><p>A cadence can depend on windows, suppression, and supplied policy facts. Decan records an honest need when those facts are absent.</p></article><article class="domain"><h3>Protocol obligations</h3><p>Deadlines, grace periods, acknowledgements, and expiry are relationships and boundaries, not merely jobs that run later.</p></article></div></div></section>
+      <section id="horizon" class="horizon"><div class="shell"><div class="section-head"><span class="section-number">05 / Horizon</span><div><h2>Open core, long horizon.</h2><p class="section-copy">The reference core already carries pinned astronomical snapshots for mission-planning cases. Scientific-scale transformation, managed snapshots, audit replay, MCP operations, and connectors remain separate profiles or products, never hidden execution inside the primitive.</p><div class="horizon-links"><a href="../docs/scientific-time-spike.md">Scientific-Time Spike ↗</a><a href="../docs/managed-services-exploration.md">Managed Services Exploration ↗</a></div></div></div></div></section>
     </main>
+    <footer class="shell"><p>Decan is licensed under <a href="../LICENSE">Apache-2.0</a>. Proper Time is a standards-shaped proposal; Decan is its executable reference implementation.</p><p>Readable source. Pinned evidence. Honest boundaries.</p></footer>
+    <script>document.documentElement.classList.add("js"); document.querySelectorAll(".trace-step").forEach((step, index) => step.style.setProperty("--step", String(index)));</script>
   </body>
 </html>

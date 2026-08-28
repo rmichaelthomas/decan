@@ -29,12 +29,27 @@ describe("public dissemination materials", () => {
   test("ships a standalone landing page with CLI and MCP calls to action", () => {
     const landing = read("site/index.html");
 
-    expect(landing).toContain("<title>Decan — Proper Time");
-    expect(landing).toContain("human-first");
-    expect(landing).toContain("agent-friendly");
+    expect(landing).toContain("<title>Decan | Proper Time");
+    expect(landing).toContain("temporal meaning");
+    expect(landing).toContain("reference implementation");
     expect(landing).toContain("CLI");
     expect(landing).toContain("MCP");
-    expect(landing).toContain("Proper Time Corpus");
+    expect(landing).toContain("Corpus");
+  });
+
+  test("ships an evidence-led Decan showcase without personal-product promotion", () => {
+    const landing = read("site/index.html");
+
+    expect(landing).toContain("The layer before schedules act");
+    expect(landing).toContain("intent → pinned context → exact candidate → materialized occurrence");
+    expect(landing).toContain("Workflow automation");
+    expect(landing).toContain("Policy-shaped maintenance");
+    expect(landing).toContain("Protocol obligations");
+    expect(landing).not.toContain("5xFive");
+    expect(landing).not.toContain("Seshat");
+    expect(landing).toContain("prefers-reduced-motion");
+    expect(landing).toContain("Scientific-Time Spike");
+    expect(landing).toContain("Managed Services Exploration");
   });
 
   test("keeps the README aligned with the v1.5 release posture", () => {

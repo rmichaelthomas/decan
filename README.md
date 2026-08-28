@@ -143,6 +143,10 @@ npm run build
 
 Decan currently requires Node.js `>=22.13.0` because the durable Occurrences adapter uses `node:sqlite`.
 
+## Public site
+
+The static Decan showcase lives in [`site/`](site/index.html). After this repository's Pages source is set to **GitHub Actions**, the deployment workflow publishes only that directory after pushes to `main`.
+
 ## Status
 
 The initial primitive is built out through the v1.2 world-readiness checkpoint, v1.3 public-packaging pass, v1.4 public-interface sprint, and v1.5 release, loss-evidence, scientific-time, and service-exploration sprint:
