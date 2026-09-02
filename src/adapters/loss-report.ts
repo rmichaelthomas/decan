@@ -1,6 +1,6 @@
 export type TemporalLossReport = Readonly<{
   target: "cron" | "rrule";
-  targetVersion: "v0.1-exact-weekly-subset";
+  targetVersion: "v1.0-full-surface-subset";
   operation: "import" | "export";
   fidelity: "exact" | "lossy" | "unsupported";
   preserved: ReadonlyArray<string>;
@@ -11,9 +11,9 @@ export type TemporalLossReport = Readonly<{
 }>;
 
 export const exactLossReport = (target: TemporalLossReport["target"], operation: TemporalLossReport["operation"], preserved: ReadonlyArray<string>): TemporalLossReport => ({
-  target, targetVersion: "v0.1-exact-weekly-subset", operation, fidelity: "exact", preserved, discarded: [], assumptions: [], consequences: []
+  target, targetVersion: "v1.0-full-surface-subset", operation, fidelity: "exact", preserved, discarded: [], assumptions: [], consequences: []
 });
 
 export const unsupportedLossReport = (target: TemporalLossReport["target"], operation: TemporalLossReport["operation"], consequence: string): TemporalLossReport => ({
-  target, targetVersion: "v0.1-exact-weekly-subset", operation, fidelity: "unsupported", preserved: [], discarded: ["source semantics were not converted"], assumptions: [], consequences: [consequence], remediation: "Select an exact supported subset or keep the canonical Decan source."
+  target, targetVersion: "v1.0-full-surface-subset", operation, fidelity: "unsupported", preserved: [], discarded: ["source semantics were not converted"], assumptions: [], consequences: [consequence], remediation: "Select an exact supported subset or keep the canonical Decan source."
 });

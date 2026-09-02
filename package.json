@@ -1,8 +1,8 @@
 {
   "name": "decan",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Human-first, agent-friendly temporal intent reference implementation for Proper Time.",
-  "private": true,
+  "private": false,
   "license": "Apache-2.0",
   "type": "module",
   "exports": {

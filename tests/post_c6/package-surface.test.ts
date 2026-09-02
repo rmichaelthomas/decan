@@ -13,10 +13,10 @@ describe("public package surface", () => {
     types?: string;
   };
 
-  it("declares the Decan package as a reference implementation without choosing a license", () => {
+  it("declares the Decan package as a publishable reference implementation", () => {
     expect(packageJson).toMatchObject({
       description: "Human-first, agent-friendly temporal intent reference implementation for Proper Time.",
-      private: true,
+      private: false,
       repository: { url: "git+https://github.com/rmichaelthomas/decan.git" }
     });
   });
