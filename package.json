@@ -1,5 +1,5 @@
 {
-  "name": "decan",
+  "name": "@rmichaelthomas/decan",
   "version": "1.0.0",
   "description": "Human-first, agent-friendly temporal intent reference implementation for Proper Time.",
   "private": false,
