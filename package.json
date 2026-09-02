@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Human-first, agent-friendly temporal intent reference implementation for Proper Time.",
   "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
