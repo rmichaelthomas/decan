@@ -1,11 +1,11 @@
-import { createHash } from "node:crypto";
 import { canonicalize } from "json-canonicalize";
+import { sha256Hex } from "./sha256.js";
 import type { CanonicalizedValue, HashIdentity, NormalizedDocument, TemporalExpression } from "../model/types.js";
 import { printDocument } from "./printer.js";
 import { normalizeDocument } from "../syntax/normalize.js";
 
 export const canonicalJson = (value: unknown): string => canonicalize(value);
-export const sha256 = (value: unknown): HashIdentity => `sha256:${createHash("sha256").update(canonicalJson(value), "utf8").digest("hex")}`;
+export const sha256 = (value: unknown): HashIdentity => `sha256:${sha256Hex(canonicalJson(value))}`;
 
 const semanticDocument = (document: NormalizedDocument) => ({
   ...(document.intentId ? { intentId: document.intentId } : {}),

@@ -13,6 +13,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./temporal": {
+      "types": "./dist/temporal.d.ts",
+      "import": "./dist/temporal.js"
+    },
     "./cli": {
       "types": "./dist/cli/commands.d.ts",
       "import": "./dist/cli/commands.js"
