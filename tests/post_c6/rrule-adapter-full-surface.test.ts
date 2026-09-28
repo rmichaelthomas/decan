@@ -42,7 +42,9 @@ describe("full-surface RRULE adapter: interval-based cadences", () => {
       fc.integer({ min: 1, max: 12 }),
       fc.integer({ min: 0, max: 6 }),
       (freq, interval, weekdayIndex) => {
-        const dtstart = "20260831T090000"; // 2026-08-31 is a Monday
+        // 2026-08-31 is a Monday. 1.1.0: MONTHLY from day 31 now fails closed (the day is missing in
+        // shorter months), so MONTHLY starts on the 1st here; day-skipping is tested in rrule-weekly-sets.
+        const dtstart = freq === "MONTHLY" ? "20260901T090000" : "20260831T090000";
         const rrule = freq === "WEEKLY" ? `FREQ=WEEKLY;INTERVAL=${interval};BYDAY=MO` : `FREQ=${freq};INTERVAL=${interval}`;
         void weekdayIndex;
         const { first, second } = roundTrip(dtstart, rrule);
@@ -185,7 +187,8 @@ describe("full-surface RRULE adapter: export-side fail-closed and quarter export
 
   it("exports a Decan quarter repeat as FREQ=MONTHLY with a tripled INTERVAL", () => {
     const expression: TemporalExpression = { kind: "compound", expressions: [{ kind: "point", value: { kind: "clock", hour: 9, minute: 0 } }, { kind: "repeat", every: 2, unit: "quarter", mode: "civil" }] };
-    const result = exportRRule({ expression, lifecycle });
+    // 1.1.0: a quarter stride from Aug 31 moves to Feb 28, which an RRULE cannot express, so start on the 1st.
+    const result = exportRRule({ expression, lifecycle: { ...lifecycle, effectiveFrom: { kind: "date", calendar: "iso8601", year: 2026, month: 9, day: 1 } } });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.contentLines).toContain("RRULE:FREQ=MONTHLY;INTERVAL=6");

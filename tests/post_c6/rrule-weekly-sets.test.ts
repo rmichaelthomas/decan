@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { exportRRule, importRRule, resolveSeries } from "../../src/index.js";
+import { exportRRule, importCronExpression, importRRule, resolveSeries } from "../../src/index.js";
 import type { IntentLifecycle, TemporalExpression } from "../../src/model/types.js";
 
 const clock = (hour: number, minute = 0) => ({ kind: "point", value: { kind: "clock", hour, minute } }) as const;
@@ -165,6 +165,8 @@ describe("RRULE export: weekly weekday sets", () => {
  * Byte-identical guard. Every importRRule input that was exact at 90c3235 (1.0.0 + ./temporal) and
  * is exercised by the pre-existing suites, with sha256(JSON.stringify(output)) of its import and of
  * the export of that import, captured from a clean build of 90c3235. Key order counts.
+ * Twelve monthly rules starting on day 31 were exact in 1.0.0 but wrong (Decan moved the
+ * missing day to month end; RRULE skips the month). They now fail closed and are asserted separately.
  */
 const BASELINE_1_0_0: ReadonlyArray<readonly [string, string, ReadonlyArray<string>, string, string]> = [
   ["20260831T090000", "FREQ=DAILY;INTERVAL=3", [], "bc6c1f815eed4720287df4976e22df54547a1748722556a2ba78072ac318a214", "54f20098389e21ef643e38e48bd73d382d3166557160d183d0fab89b75744ffa"],
@@ -195,17 +197,6 @@ const BASELINE_1_0_0: ReadonlyArray<readonly [string, string, ReadonlyArray<stri
   ["20260831T090000", "FREQ=WEEKLY;INTERVAL=10;BYDAY=MO", [], "72c06ea30c64de7324b23a8673111bc9df807b527b1e8bb0b75d048260456c92", "115be9b591e1883bb3c3ab7ec3508543295a553e577bf95fa6b279cb04b5f09a"],
   ["20260831T090000", "FREQ=WEEKLY;INTERVAL=11;BYDAY=MO", [], "b1c99a8f8794f97a33b1fd1c8427dfac8b0a6aa07df1e9ac533c1d20ce516557", "603ffbb0afa2cbfbde2b3d5ec9e80a83c7689237325f6b0526fee164bf1362c5"],
   ["20260831T090000", "FREQ=WEEKLY;INTERVAL=12;BYDAY=MO", [], "47005ef533180372d106b475e9d557b9d8fc18bdb9cd4a8aff12c2236ded584e", "91b37b676e560935461f38d894cff2c2f769b89a83f41d0e026bc9452f690f58"],
-  ["20260831T090000", "FREQ=MONTHLY;INTERVAL=1", [], "79ab36c4b5d9febc404b8bda6d135ac7877864285b4dd2333498d9970ce5622a", "aa08b84a5c99747195a0a91907dfd383b1970fd567604a8e319f60bebe591705"],
-  ["20260831T090000", "FREQ=MONTHLY;INTERVAL=2", [], "704f50b505768bc76cbe730bffdc5d139c076055906e983691286203f43a784c", "d199b17498189abfe4049074097860d1ad6fddd82d77714f0d7815cf2c365d4c"],
-  ["20260831T090000", "FREQ=MONTHLY;INTERVAL=3", [], "43d2dd6e3e35e08f505e25f398069f09350225754ef3799f95c07e47d56758b2", "7949af437e6a9103551d0152313e8610dc8b20394538af4b5a6c799282b88fc8"],
-  ["20260831T090000", "FREQ=MONTHLY;INTERVAL=4", [], "ad8bac77858e9ca194abd5efa5a0c4cafa4334ecc206a23fb3a1a124457c3fd5", "42238d6d74dcaf562448bf06958f35586588b78e6b46783771fe36e66c678faa"],
-  ["20260831T090000", "FREQ=MONTHLY;INTERVAL=5", [], "5d18b42938a830d620998b7eb9a1c3464112570036597cae0d99d4a737ef7ebc", "53f7d9f9ebc88c3c5475e1293f8cce824d7ee90d8a6a09553c15de7a6cc6e093"],
-  ["20260831T090000", "FREQ=MONTHLY;INTERVAL=6", [], "9c8607515dcd918e67b68e1e48de664de91726ed3ea8791b4d9bd0ccb6693c94", "3222b1c4cac3ef108da0c726e45943174417210948ed201a4510fa63800cc99f"],
-  ["20260831T090000", "FREQ=MONTHLY;INTERVAL=7", [], "1fafb1352949ecefd4e553748540db18cda557e4670ac8d2926b941a08f60cba", "750acfdc1df7ca1d37203f6408c117a55275ca6ba7188c3bae36d8d17f2e345e"],
-  ["20260831T090000", "FREQ=MONTHLY;INTERVAL=8", [], "d073811b8718adf125dd1c0c00a13c3740e84671c6eb08cbc0c21a722786f430", "de0dce7a33b618935c102f5dee9037a617b2ddf3bcdbfd5c50df9fd729df81bb"],
-  ["20260831T090000", "FREQ=MONTHLY;INTERVAL=9", [], "cd9447b92e51dbb3082d081974592096962eb40f2febb1512aba2bf00e280638", "2ffd87c8de6a9d682412fc7b3a36317a24fcc0b1b0f815a02924df1a430391be"],
-  ["20260831T090000", "FREQ=MONTHLY;INTERVAL=10", [], "d1e2636285b54b479b2b5286d1c3635b66330486bc69828c5b8f5dee6c572506", "94a15c269333ae321379582d6a0ada77fba9ffbd2679ec36d161422bc5e872c1"],
-  ["20260831T090000", "FREQ=MONTHLY;INTERVAL=11", [], "6eb4e09a289e1163b6b8e6d6475ecf3b111ce77997c734a62c2ef21c5214e8b0", "930e0fd7d38a7359728dff9854765bf96ea0359b19725d68bb5cc13bd5b9e012"],
   ["20260831T090000", "FREQ=MONTHLY;INTERVAL=12", [], "9910ff517f9be4d6b07bfabd86eacf90da8cac9ceac3a0de1019bd873c6ddbeb", "17b671dea3a3872c76759c2f391127055aa9afd11241d3988594aebecd00924a"],
   ["20260831T090000", "FREQ=YEARLY;INTERVAL=1", [], "7ff0c7d5d27957c8093fa05b544a0e793406215ce62ff2797da51377c98bcaff", "75524d5ea187af09b2035032ee2f3b1e9d8deaeea47787020da3d23d106161e3"],
   ["20260831T090000", "FREQ=YEARLY;INTERVAL=2", [], "dd79cbd37ce882abd3da06f0ea1372ede0b6088dc6cb16a3e5746a47066adbed", "513b3addaab505fd1d2e0ff1645104425320b9b20aa22e5c5740bb5b23fa9607"],
@@ -274,12 +265,18 @@ const BASELINE_1_0_0: ReadonlyArray<readonly [string, string, ReadonlyArray<stri
   ["20260908T180000", "FREQ=MONTHLY;BYDAY=2TU;COUNT=4", [], "0555e7668d44186dca1e07041f12e2b2752bb8b3750790746c530a1cd59b9bd3", "078e71bd9497075b9b50bde1de5d51d3d9711ee60e0838a778318c612666ecc1"],
   ["20260915T180000", "FREQ=WEEKLY;COUNT=5", ["20260922T180000"], "c868b1fdcee7646f2d0ff8840f22e56b4c5726dff0f20b1c05975cc4fa820215", "1d8dbba367899e5ac8de0c481b43c52a1ecffe350d2d99c3e50a846cdcb6f3b8"],
   ["20260915T180000", "FREQ=WEEKLY;UNTIL=20261231", [], "19d41e976f279dc713727ead93dde4ea7b13c0816c02dbb502932b746e0b2100", "c64f8bc8b6828534eb5d3b0080278756505a52de4b0f11ac95978d1c76424bd5"],
-  ["20260915T180000", "FREQ=WEEKLY;BYDAY=TU", [], "04f11902d0c5eedd4bc28390b66990ee57afbac53ab17a4c76596475903ca633", "fe6b5e59c532bb1de07a79434188292f921c2e71cfdb65ea0e6d1740289de540"],
-  ["20260131T070809", "FREQ=MONTHLY;INTERVAL=1;UNTIL=20261231T235959Z", [], "8acd95c0893e570d0dd70aaa664ad081ba58f21f0c5aa1f8248c4914f4d13819", "a6bae26d9bf334c061cb754a7cab7ca1cc1c1a3577e6439c1c8709d41b3f5569"]
+  ["20260915T180000", "FREQ=WEEKLY;BYDAY=TU", [], "04f11902d0c5eedd4bc28390b66990ee57afbac53ab17a4c76596475903ca633", "fe6b5e59c532bb1de07a79434188292f921c2e71cfdb65ea0e6d1740289de540"]
 ];
 
 describe("byte-identical guard: pre-1.1.0 exact inputs", () => {
   const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+
+  it("covers exactly 97 pre-1.1.0 inputs; the 12 day-31 monthly rules are asserted below", () => expect(BASELINE_1_0_0).toHaveLength(97));
+
+  it("now fails closed on the 12 pre-1.1.0 monthly rules whose DTSTART day is missing in some months", () => {
+    const changed = [...Array.from({ length: 11 }, (_, index) => ["20260831T090000", `FREQ=MONTHLY;INTERVAL=${index + 1}`] as const), ["20260131T070809", "FREQ=MONTHLY;INTERVAL=1;UNTIL=20261231T235959Z"] as const];
+    for (const [dtstart, rrule] of changed) expect(importRRule({ dtstart, rrule })).toMatchObject({ ok: false, errors: [{ category: "capability", code: "DECAN-ADAPTER-RRULE-UNSUPPORTED", details: { lossReport: { fidelity: "unsupported" } } }] });
+  });
 
   it(`keeps all ${BASELINE_1_0_0.length} import and export outputs byte-identical to 90c3235`, () => {
     const drift = BASELINE_1_0_0.flatMap(([dtstart, rrule, exdates, importHash, exportHash]) => {
@@ -292,5 +289,40 @@ describe("byte-identical guard: pre-1.1.0 exact inputs", () => {
       ];
     });
     expect(drift).toEqual([]);
+  });
+});
+
+describe("day-skipping monthly and yearly rules fail closed", () => {
+  const unsupportedImport = (dtstart: string, rrule: string) => expect(importRRule({ dtstart, rrule })).toMatchObject({ ok: false, errors: [{ category: "capability", message: expect.stringMatching(/skips periods that have no day/) }] });
+
+  it("rejects MONTHLY from day 29, 30, or 31 when some stride month lacks that day", () => {
+    unsupportedImport("20260131T090000", "FREQ=MONTHLY");
+    unsupportedImport("20260130T090000", "FREQ=MONTHLY;COUNT=3");
+    unsupportedImport("20260129T090000", "FREQ=MONTHLY;INTERVAL=1");
+    unsupportedImport("20260831T090000", "FREQ=MONTHLY;INTERVAL=6");
+  });
+
+  it("keeps MONTHLY exact when the day exists in every stride month", () => {
+    exact("20260831T090000", "FREQ=MONTHLY;INTERVAL=12");
+    exact("20260128T090000", "FREQ=MONTHLY");
+    exact("20260131T090000", "FREQ=MONTHLY;INTERVAL=2;BYDAY=-1FR"); // weekday selections never move a day
+  });
+
+  it("rejects YEARLY from Feb 29 and keeps other yearly days exact", () => {
+    unsupportedImport("20280229T090000", "FREQ=YEARLY");
+    exact("20280228T090000", "FREQ=YEARLY");
+    exact("20261231T090000", "FREQ=YEARLY");
+  });
+
+  it("rejects the same shapes from cron and on RRULE export", () => {
+    const effectiveFrom = { kind: "date" as const, calendar: "iso8601" as const, year: 2026, month: 8, day: 27 };
+    expect(importCronExpression({ cron: "0 9 31 * *", effectiveFrom })).toMatchObject({ ok: false, errors: [{ message: expect.stringMatching(/skips periods/) }] });
+    expect(importCronExpression({ cron: "0 9 29 2 *", effectiveFrom })).toMatchObject({ ok: false, errors: [{ message: expect.stringMatching(/skips periods/) }] });
+    expect(importCronExpression({ cron: "0 9 28 * *", effectiveFrom })).toMatchObject({ ok: true });
+    const lifecycle: IntentLifecycle = { status: "active", version: 1, effectiveFrom: { kind: "date", calendar: "iso8601", year: 2026, month: 1, day: 31 } };
+    const repeat = (unit: "month" | "quarter" | "year", every: number): TemporalExpression => ({ kind: "compound", expressions: [clock(9), { kind: "repeat", every, unit, mode: "civil" }] as TemporalExpression[] });
+    expect(exportRRule({ expression: repeat("month", 1), lifecycle })).toMatchObject({ ok: false, errors: [{ category: "capability" }] });
+    expect(exportRRule({ expression: repeat("quarter", 1), lifecycle })).toMatchObject({ ok: false, errors: [{ category: "capability" }] });
+    expect(exportRRule({ expression: repeat("year", 1), lifecycle })).toMatchObject({ ok: true });
   });
 });

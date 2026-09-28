@@ -71,7 +71,7 @@ The exact adapter subset supports:
 - export of the same shapes back to `DTSTART` + `RRULE` (+ `EXDATE`);
 - cron shaped like `0 9 * * 1` (weekly), `0 9 15 * *` (monthly by day), and `0 9 25 12 *` (yearly).
 
-`BYSETPOS`, `BYMONTHDAY`, `BYMONTH`, `BYYEARDAY`, `BYWEEKNO`, `RDATE`, `RECURRENCE-ID`, and `VTIMEZONE` remain unsupported. [docs/conformance.md](docs/conformance.md#adapter-support) has the full list and the exact series semantics.
+`BYSETPOS`, `BYMONTHDAY`, `BYMONTH`, `BYYEARDAY`, `BYWEEKNO`, `RDATE`, `RECURRENCE-ID`, and `VTIMEZONE` remain unsupported, as do monthly rules starting on the 29th–31st and yearly rules starting on Feb 29 (RRULE skips the missing days; Decan cannot). [docs/conformance.md](docs/conformance.md#adapter-support) has the full list and the exact series semantics.
 
 Unsupported or lossy shapes fail closed with capability errors. Every adapter result includes a `TemporalLossReport`: exact conversions name the preserved semantics, while rejected conversions name the consequence and remediation. Decan never emits an apparently valid cron/RRULE expression while pretending discarded semantics were preserved.
 

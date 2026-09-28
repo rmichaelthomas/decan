@@ -26,7 +26,7 @@ The pre-build script (`series-resolution-benchmarks-pre.md`) was re-run unmodifi
 
 Cases 1 and 2, unsupported on `main`, now import exactly (`ok: True`, `ok: True`).
 
-In addition, the byte-identical guard in `tests/post_c6/rrule-weekly-sets.test.ts` hashes `JSON.stringify` of the import **and** export output for 109 pre-existing exact inputs. Those are every input exercised by `rrule-adapter-full-surface.test.ts`, including both enumerated property domains, plus the exact inputs in `cron-rrule-adapters.test.ts`, `temporal-loss-report.test.ts`, and the pre-build cases. The hashes were captured from a clean build of `90c3235` in a scratch worktree. All 109 import hashes and all 109 export hashes match.
+In addition, the byte-identical guard in `tests/post_c6/rrule-weekly-sets.test.ts` hashes `JSON.stringify` of the import **and** export output for 109 pre-existing exact inputs. Those are every input exercised by `rrule-adapter-full-surface.test.ts`, including both enumerated property domains, plus the exact inputs in `cron-rrule-adapters.test.ts`, `temporal-loss-report.test.ts`, and the pre-build cases. The hashes were captured from a clean build of `90c3235` in a scratch worktree. The guard was captured over 109 inputs. After the day-skipping fix, 97 import and 97 export hashes still match exactly. The other 12 are monthly rules starting on day 31. They were exact in 1.0.0 but produced wrong dates, and they now fail closed; a separate test asserts that.
 
 ## Case detail — instants
 

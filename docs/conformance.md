@@ -99,6 +99,7 @@ Cron/RRULE adapter support is exact for the following full-surface subset (v1.0,
 
 - `BYSETPOS`, `BYYEARDAY`, `BYWEEKNO`, `BYMONTH`, `BYMONTHDAY` (alone or combined with `BYDAY`, e.g. "first Monday of November" `YEARLY` recurrences), and any other RFC 5545 part outside `FREQ`/`INTERVAL`/`BYDAY`/`COUNT`/`UNTIL`/`WKST`;
 - `BYDAY` ordinals outside Decan's exact selection range (only `+1`..`+5` and `-1` are supported — `TemporalSelector`'s `ordinal` variant has no `-2`..`-5`);
+- `MONTHLY` or `YEARLY` without `BYDAY` when `DTSTART`'s day is missing in some period the stride reaches (the 29th–31st monthly, Feb 29 yearly). RRULE skips those periods, while Decan's repeat moves to the period's last day. The same rule applies to monthly and yearly cron triggers on those days, and to exporting such a Decan repeat to RRULE. In 1.0.0 these rules imported as exact, which was wrong;
 - `BYDAY` ordinals at `WEEKLY` or `DAILY` frequency, and a `BYDAY` list that repeats a weekday;
 - `BYDAY` combined with `DAILY` at `INTERVAL>1`, or with `YEARLY` at any interval;
 - `WKST` other than `MO` when `INTERVAL>1`;
@@ -133,7 +134,7 @@ Any other exception, and any `condition`, `adjustment`, `offset`, `relation`, `w
 
 **Selection scope.** A selection is scoped to the period of the enclosing repeat's unit. Under `repeat(week, n)` that period is the ISO week (Monday start) containing each stride week. Under `repeat(month, n)` it is the calendar month.
 
-**Stride.** Periods step by `repeat.every` from the period that contains `effectiveFrom`. With no selections, occurrences are `effectiveFrom` advanced by the stride, exactly as `resolveExpression` generates repeat dates. That includes month-end clamping: Jan 31 + 1 month is Feb 28. RFC 5545 would skip the invalid date instead.
+**Stride.** Periods step by `repeat.every` from the period that contains `effectiveFrom`. With no selections, occurrences are `effectiveFrom` advanced by the stride, exactly as `resolveExpression` generates repeat dates. That includes month-end clamping: Jan 31 + 1 month is Feb 28. RFC 5545 and cron skip that month instead, which is why the adapters reject those rules (see below).
 
 **Origin.** Dates before `effectiveFrom` in the first period are not occurrences. When selections are present, `effectiveFrom` is an occurrence only if it satisfies them. RFC 5545 leaves the result for a `DTSTART` that is not synchronized with the rule undefined, and `resolveSeries` does not invent one.
 
