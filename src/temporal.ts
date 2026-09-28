@@ -30,6 +30,8 @@ export type { ResolveOutcomeKind, ResolveSupportKind, ResolveSupportReport } fro
 export { candidateIdentity, resolutionIdentity } from "./resolution/identity.js";
 export { resolveCivilTime } from "./resolution/civil-time.js";
 export type { CivilTimeRequest, CivilTimeResult } from "./resolution/civil-time.js";
+export { resolveSeries } from "./resolution/series.js";
+export type { SeriesOccurrence, SeriesRequest, SeriesResult, SeriesWindow } from "./resolution/series.js";
 export { addBusinessDays } from "./providers/business-calendar.js";
 export type { BusinessCalendarSnapshot, BusinessDayRequest } from "./providers/business-calendar.js";
 export { astronomicalSnapshot, availabilitySnapshot, businessCalendarSnapshot, customContextSnapshot, explicitReference, locationSnapshot, participantSnapshot, timezoneSnapshot } from "./providers/context-snapshots.js";

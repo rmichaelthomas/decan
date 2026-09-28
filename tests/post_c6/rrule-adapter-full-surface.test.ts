@@ -153,14 +153,16 @@ describe("full-surface RRULE adapter: fail-closed tail", () => {
     expectUnsupported("FREQ=MONTHLY;BYDAY=+6TU");
   });
 
-  it("fails closed on weekly weekday sets and mismatched single weekdays", () => {
-    expectUnsupported("FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,WE,FR");
-    expectUnsupported("FREQ=WEEKLY;INTERVAL=1;BYDAY=TU"); // dtstart is a Monday
+  // 1.1.0: weekly weekday sets and a differing single weekly BYDAY are exact (rrule-weekly-sets.test.ts).
+  it("fails closed on positional weekdays at weekly frequency", () => {
+    expectUnsupported("FREQ=WEEKLY;INTERVAL=1;BYDAY=+1MO,WE,FR");
+    expectUnsupported("FREQ=WEEKLY;INTERVAL=1;BYDAY=-1TU"); // dtstart is a Monday
   });
 
-  it("fails closed on YEARLY/DAILY combined with BYDAY", () => {
+  // 1.1.0: DAILY;INTERVAL=1 with BYDAY is exactly a weekly weekday set (rrule-weekly-sets.test.ts).
+  it("fails closed on YEARLY BYDAY and DAILY BYDAY with INTERVAL>1", () => {
     expectUnsupported("FREQ=YEARLY;INTERVAL=1;BYDAY=+1MO");
-    expectUnsupported("FREQ=DAILY;INTERVAL=1;BYDAY=MO");
+    expectUnsupported("FREQ=DAILY;INTERVAL=2;BYDAY=MO");
   });
 
   it("fails closed when COUNT and UNTIL are both present", () => {
