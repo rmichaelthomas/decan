@@ -57,6 +57,20 @@ const nextMonthDay = (from: DateValue, month: number, day: number): DateValue | 
   }
   return undefined;
 };
+// Decan's civil month/year stride moves a missing day to the period's last day (Jan 31 + 1 month = Feb 28);
+// RRULE and cron skip that period instead. They agree only when the day exists in every stride period.
+const strideClamps = (from: DateValue, unit: RepeatUnit, every: number): boolean => {
+  if (from.day <= 28 || (unit !== "month" && unit !== "quarter" && unit !== "year")) return false;
+  const start = plainFromDate(from);
+  const months = unit === "month" ? every : unit === "quarter" ? every * 3 : every * 12;
+  try {
+    for (let index = 1; index <= 400; index++) if (start.add({ months: months * index }).day !== from.day) return true;
+  } catch {
+    return true;
+  }
+  return false;
+};
+const skippedDayMessage = (source: string, day: number): string => `${source} on day ${day} skips periods that have no day ${day}, but Decan's civil repeat would move to the period's last day instead; this has no exact Decan representation.`;
 const lifecycle = (effectiveFrom: DateValue): IntentLifecycle => ({ status: "active", version: 1, effectiveFrom });
 const clockPoint = (hour: number, minute: number, second?: number): PointExpression => ({ kind: "point", value: { kind: "clock", hour, minute, ...(second ? { second } : {}) } });
 const repeatNode = (unit: RepeatUnit, every: number): RepeatExpression => ({ kind: "repeat", every, unit, mode: "civil" });
@@ -95,6 +109,7 @@ export function importCronExpression(request: CronImportRequest): OperationResul
     if (monthText === "*") {
       const effectiveFrom = nextDayOfMonth(request.effectiveFrom, day);
       if (!effectiveFrom) return unsupported("cron", "import", "DECAN-ADAPTER-CRON-UNSUPPORTED", "Cron day-of-month value never occurs.");
+      if (strideClamps(effectiveFrom, "month", 1)) return unsupported("cron", "import", "DECAN-ADAPTER-CRON-UNSUPPORTED", skippedDayMessage("A monthly cron trigger", day));
       return buildImport("imported_cron", request.cron, compoundOf([point, repeatNode("month", 1)]), effectiveFrom, "DECAN-ADAPTER-CRON-EXACT-SUBSET", "Imported exact monthly-by-day cron subset.", ["monthly civil recurrence", "local clock point", "lifecycle origin"]);
     }
     if (/^\d+$/.test(monthText)) {
@@ -102,6 +117,7 @@ export function importCronExpression(request: CronImportRequest): OperationResul
       if (month < 1 || month > 12) return unsupported("cron", "import", "DECAN-ADAPTER-CRON-UNSUPPORTED", "Cron month field is outside the exact supported range.");
       const effectiveFrom = nextMonthDay(request.effectiveFrom, month, day);
       if (!effectiveFrom) return unsupported("cron", "import", "DECAN-ADAPTER-CRON-UNSUPPORTED", "Cron month/day combination never occurs.");
+      if (strideClamps(effectiveFrom, "year", 1)) return unsupported("cron", "import", "DECAN-ADAPTER-CRON-UNSUPPORTED", skippedDayMessage("A yearly cron trigger", day));
       return buildImport("imported_cron", request.cron, compoundOf([point, repeatNode("year", 1)]), effectiveFrom, "DECAN-ADAPTER-CRON-EXACT-SUBSET", "Imported exact yearly cron subset.", ["yearly civil recurrence", "local clock point", "lifecycle origin"]);
     }
   }
@@ -201,7 +217,7 @@ export function importRRule(request: RRuleImportRequest): OperationResult<Schedu
   const rule = start ? parseRule(request.rrule) : undefined;
   if (!start || !rule) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "RRULE import requires DTSTART in basic local DATE-TIME form and parseable rule parts.");
 
-  const allowed = new Set(["FREQ", "INTERVAL", "BYDAY", "COUNT", "UNTIL"]);
+  const allowed = new Set(["FREQ", "INTERVAL", "BYDAY", "COUNT", "UNTIL", "WKST"]);
   const extraneous = [...rule.keys()].filter((key) => !allowed.has(key));
   if (extraneous.length > 0) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", `RRULE contains parts outside Decan's exact subset: ${extraneous.join(", ")}.`);
 
@@ -212,6 +228,11 @@ export function importRRule(request: RRuleImportRequest): OperationResult<Schedu
   const intervalText = rule.get("INTERVAL") ?? "1";
   if (!/^\d+$/.test(intervalText) || Number(intervalText) < 1) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "RRULE INTERVAL must be a positive integer.");
   const interval = Number(intervalText);
+
+  // Week start only changes which days share a stride week, so it matters only when weeks are skipped.
+  const wkst = rule.get("WKST");
+  if (wkst !== undefined && !(wkst in weekdayNames)) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "RRULE WKST must be a weekday code (MO, TU, WE, TH, FR, SA, SU).");
+  if (wkst !== undefined && wkst !== "MO" && interval > 1) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", `RRULE WKST=${wkst} with INTERVAL>1 is week-start dependent; Decan's week stride uses ISO weeks starting Monday, so only WKST=MO is exact when INTERVAL>1.`);
 
   const horizonResult = parseHorizon(rule);
   if (!horizonResult.ok) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "RRULE COUNT/UNTIL must be a positive integer COUNT xor a valid UNTIL date, not both.");
@@ -229,12 +250,20 @@ export function importRRule(request: RRuleImportRequest): OperationResult<Schedu
     if (tokens.some((token) => token === undefined)) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "BYDAY contains a weekday or ordinal outside Decan's exact selection range (ordinals 1-5 or -1 only).");
     const resolved = tokens as ByDayToken[];
 
-    if (freq === "WEEKLY") {
-      if (resolved.length !== 1 || resolved[0]!.ordinal !== undefined || weekdayNumbers[weekdayNameCodes[resolved[0]!.weekday]] !== plainFromDate(start.date).dayOfWeek) {
-        return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "Weekly BYDAY is exact only for a single weekday matching DTSTART; weekday sets and positional weekdays at weekly frequency have no resolver representation.");
+    // DAILY;INTERVAL=1;BYDAY=<set> is every listed weekday of every week: exactly the weekly set.
+    const dailyAsWeekly = freq === "DAILY" && interval === 1;
+    if (freq === "WEEKLY" || dailyAsWeekly) {
+      if (resolved.some((token) => token.ordinal !== undefined)) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", `${freq} BYDAY accepts bare weekdays only; positional weekdays at ${freq.toLowerCase()} frequency have no resolver representation.`);
+      const days = resolved.map((token) => weekdayNumbers[weekdayNameCodes[token.weekday]]!);
+      if (new Set(days).size !== days.length) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "BYDAY lists the same weekday more than once.");
+      const dailyMessage = "Imported DAILY;INTERVAL=1 with BYDAY as the exactly equivalent weekly weekday-set RRULE subset (every listed weekday of every week).";
+      if (days.length === 1 && days[0] === plainFromDate(start.date).dayOfWeek) {
+        const expression = compoundOf([point, repeatNode("week", interval), ...exdateTokens.map(exceptionFor)]);
+        return buildImport("imported_rrule", source, expression, start.date, "DECAN-ADAPTER-RRULE-EXACT-SUBSET", dailyAsWeekly ? dailyMessage : "Imported exact weekly RRULE subset.", preservedFor(["weekly civil recurrence", "local clock point", "lifecycle origin"], horizon, exdateTokens.length), horizon);
       }
-      const expression = compoundOf([point, repeatNode("week", interval), ...exdateTokens.map(exceptionFor)]);
-      return buildImport("imported_rrule", source, expression, start.date, "DECAN-ADAPTER-RRULE-EXACT-SUBSET", "Imported exact weekly RRULE subset.", preservedFor(["weekly civil recurrence", "local clock point", "lifecycle origin"], horizon, exdateTokens.length), horizon);
+      const canonical = [...resolved].sort((left, right) => weekdayNumbers[weekdayNameCodes[left.weekday]]! - weekdayNumbers[weekdayNameCodes[right.weekday]]!);
+      const expression = compoundOf([point, repeatNode("week", interval), ...canonical.map(selectionFor), ...exdateTokens.map(exceptionFor)]);
+      return buildImport("imported_rrule", source, expression, start.date, "DECAN-ADAPTER-RRULE-EXACT-SUBSET", dailyAsWeekly ? dailyMessage : "Imported exact weekly weekday-set RRULE subset.", preservedFor(["weekly weekday-set selection", "local clock point", "lifecycle origin"], horizon, exdateTokens.length), horizon);
     }
 
     if (freq === "MONTHLY") {
@@ -242,9 +271,10 @@ export function importRRule(request: RRuleImportRequest): OperationResult<Schedu
       return buildImport("imported_rrule", source, expression, start.date, "DECAN-ADAPTER-RRULE-EXACT-SUBSET", "Imported exact monthly positional/weekday-selection RRULE subset.", preservedFor(["monthly positional weekday selection", "local clock point", "lifecycle origin"], horizon, exdateTokens.length), horizon);
     }
 
-    return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "BYDAY is exact only for WEEKLY (single weekday matching DTSTART) or MONTHLY (positional/weekday selection).");
+    return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", freq === "DAILY" ? "DAILY BYDAY is exact only at INTERVAL=1, where it equals a weekly weekday set; with INTERVAL>1 the day stride and the weekday filter interact and have no resolver representation." : "BYDAY is exact only for WEEKLY (bare weekdays), DAILY at INTERVAL=1 (bare weekdays), or MONTHLY (positional/weekday selection).");
   }
 
+  if (strideClamps(start.date, unit, interval)) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", skippedDayMessage(`FREQ=${freq} from DTSTART`, start.date.day));
   const adverb = unitAdverb[unit]!;
   const expression = compoundOf([point, repeatNode(unit, interval), ...exdateTokens.map(exceptionFor)]);
   return buildImport("imported_rrule", source, expression, start.date, "DECAN-ADAPTER-RRULE-EXACT-SUBSET", `Imported exact ${adverb} RRULE subset.`, preservedFor([`${adverb} civil recurrence`, "local clock point", "lifecycle origin"], horizon, exdateTokens.length), horizon);
@@ -277,7 +307,15 @@ export function exportRRule(request: RRuleExportRequest): OperationResult<RRuleE
   let exportMessage: string;
   const preservedBase: string[] = ["local clock point", "lifecycle origin"];
 
-  if (selections.length > 0) {
+  if (selections.length > 0 && repeat?.unit === "week" && repeat.mode === "civil") {
+    if (!selections.every((selection) => selection.filter?.kind === "weekday" && selection.selector.kind === "all")) return unsupported("rrule", "export", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "Weekly weekday-set export requires weekday filters with the all selector; ordinals under a weekly repeat have no RRULE equivalent.");
+    const days = [...new Set(selections.map((selection) => weekdayNumbers[byDayTokenFor(selection)!]!))].sort((left, right) => left - right);
+    freq = "WEEKLY";
+    interval = repeat.every;
+    byday = days.map((day) => weekdayCodes[day]).join(",");
+    preservedBase.push("weekly weekday-set selection");
+    exportMessage = "Exported exact weekly weekday-set RRULE subset.";
+  } else if (selections.length > 0) {
     if (repeat && (repeat.unit !== "month" || repeat.mode !== "civil")) return unsupported("rrule", "export", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "Positional/weekday-selection export requires a monthly civil repeat stride.");
     const tokens = selections.map(byDayTokenFor);
     if (tokens.some((token) => token === undefined)) return unsupported("rrule", "export", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "RRULE export supports only weekday filters with ordinal or all selectors for BYDAY.");
@@ -289,6 +327,7 @@ export function exportRRule(request: RRuleExportRequest): OperationResult<RRuleE
   } else {
     if (!repeat || repeat.mode !== "civil") return unsupported("rrule", "export", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "RRULE export requires an exact civil repeat cadence.");
     const mappedFreq = unitToFreq[repeat.unit];
+    if (strideClamps(effectiveFrom, repeat.unit, repeat.every)) return unsupported("rrule", "export", "DECAN-ADAPTER-RRULE-UNSUPPORTED", `A ${repeat.unit} repeat from day ${effectiveFrom.day} moves to the period's last day when that day is missing, but an RRULE would skip the period instead; this has no exact RRULE representation.`);
     if (!mappedFreq) return unsupported("rrule", "export", "DECAN-ADAPTER-RRULE-UNSUPPORTED", `RRULE export does not support the '${repeat.unit}' recurrence unit.`);
     const adverb = unitAdverb[repeat.unit]!;
     freq = mappedFreq;

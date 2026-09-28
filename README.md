@@ -38,7 +38,8 @@ lifecycle
 - Exact snapshot-only temporal resolution with a public resolver support matrix.
 - Explicit context snapshot adapters for timezone, calendar, locale, observer/reference facts, location, participant, availability, astronomical, and custom context.
 - Civil-time gap/fold handling from pinned timezone rules.
-- Loss-aware cron/RRULE adapters for a small exact weekly subset, each with a `TemporalLossReport` that records exact preservation or an explicit unsupported conversion.
+- Series resolution: `resolveSeries` expands a recurring compound (a repeat stride, week- or month-scoped weekday selections, one clock point, per-date `EXDATE` suppression, `COUNT`/`UNTIL`) into a finite occurrence list over a window, with gaps and folds reported rather than resolved by policy.
+- Loss-aware cron/RRULE adapters over an exact fail-closed subset, each with a `TemporalLossReport` that records exact preservation or an explicit unsupported conversion.
 - SQLite-backed append-only Occurrences with materialization/replay checks.
 - Executable consumer evidence for 5xFive, Seshat, and the Cloudflare backward-channel package.
 - A CLI for direct parsing, validation, support classification, resolution, adapter interop, and materialization.
@@ -60,11 +61,17 @@ That was the original design target: humans should not have to think like cron, 
 
 Decan does not claim to replace RFC 5545/iCalendar. It treats cron and RRULE as interchange targets when fidelity is possible.
 
-The first exact adapter subset supports:
+The exact adapter subset supports:
 
-- cron shaped like `0 9 * * 1`;
-- RRULE shaped like `FREQ=WEEKLY;INTERVAL=1;BYDAY=MO` with explicit local `DTSTART`;
-- Decan weekly civil recurrence plus one clock point and lifecycle origin exported to `DTSTART` + `RRULE`.
+- RRULE with explicit local `DTSTART`: `FREQ=DAILY|WEEKLY|MONTHLY|YEARLY` with any `INTERVAL`, and `COUNT` or `UNTIL`;
+- `EXDATE` values, carried as `@exdate:` markers and applied per date by `resolveSeries`;
+- `MONTHLY` positional and weekday-set `BYDAY` (`2TU`, `-1FR`, `TU,TH`);
+- `WEEKLY` weekday sets (`BYDAY=MO,WE`, or a single weekday that differs from `DTSTART`), and `DAILY;INTERVAL=1` with `BYDAY` as its exact weekly equivalent;
+- `WKST=MO` at any interval, and any other `WKST` at `INTERVAL=1`;
+- export of the same shapes back to `DTSTART` + `RRULE` (+ `EXDATE`);
+- cron shaped like `0 9 * * 1` (weekly), `0 9 15 * *` (monthly by day), and `0 9 25 12 *` (yearly).
+
+`BYSETPOS`, `BYMONTHDAY`, `BYMONTH`, `BYYEARDAY`, `BYWEEKNO`, `RDATE`, `RECURRENCE-ID`, and `VTIMEZONE` remain unsupported, as do monthly rules starting on the 29th–31st and yearly rules starting on Feb 29 (RRULE skips the missing days; Decan cannot). [docs/conformance.md](docs/conformance.md#adapter-support) has the full list and the exact series semantics.
 
 Unsupported or lossy shapes fail closed with capability errors. Every adapter result includes a `TemporalLossReport`: exact conversions name the preserved semantics, while rejected conversions name the consequence and remediation. Decan never emits an apparently valid cron/RRULE expression while pretending discarded semantics were preserved.
 
@@ -143,6 +150,14 @@ npm run build
 
 Decan currently requires Node.js `>=22.13.0` because the durable Occurrences adapter uses `node:sqlite`.
 
+### Edge runtimes
+
+Import from `@rmichaelthomas/decan/temporal` on Cloudflare Workers, Deno, or the browser. It exports the same surface as the package root, including `resolveSeries` and the RRULE adapters, minus `SQLiteOccurrenceStore`, the only module that imports a Node builtin. Edge consumers supply their own `OccurrenceStore`.
+
+```ts
+import { importRRule, resolveSeries } from "@rmichaelthomas/decan/temporal";
+```
+
 ## Public site
 
 The static Decan showcase lives in [`site/`](site/index.html). After this repository's Pages source is set to **GitHub Actions**, the deployment workflow publishes only that directory after pushes to `main`.
@@ -152,7 +167,7 @@ The static Decan showcase lives in [`site/`](site/index.html). After this reposi
 The initial primitive is built out through the v1.2 world-readiness checkpoint, v1.3 public-packaging pass, v1.4 public-interface sprint, and v1.5 release, loss-evidence, scientific-time, and service-exploration sprint:
 
 - `temporal-core.resolve` is exact over Decan's declared support matrix.
-- cron/RRULE interop has an exact fail-closed subset.
+- cron/RRULE interop has an exact fail-closed subset, and `resolveSeries` expands every imported RRULE shape into occurrences.
 - live dynamic observers are closed as unsupported in core.
 - public packaging now states the Decan / Proper Time positioning, support claims, examples, and non-goals.
 - CLI and MCP surfaces now make Decan directly usable by humans, scripts, CI, and agent hosts.

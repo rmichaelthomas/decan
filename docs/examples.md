@@ -5,7 +5,7 @@ These examples show the public shape of Decan as a temporal-intent reference imp
 ## Canonicalize readable source
 
 ```ts
-import { canonicalizeText } from "decan";
+import { canonicalizeText } from "@rmichaelthomas/decan";
 
 const result = canonicalizeText({
   surface: "authoring",
@@ -29,7 +29,7 @@ time
 ## Resolve with pinned timezone evidence
 
 ```ts
-import { resolveExpression, timezoneSnapshot } from "decan";
+import { resolveExpression, timezoneSnapshot } from "@rmichaelthomas/decan";
 
 const zone = timezoneSnapshot({
   id: "America/New_York",
@@ -62,7 +62,7 @@ This produces a finite candidate from explicit inputs. Decan does not read the h
 ## Inspect resolver support
 
 ```ts
-import { classifyResolveSupport } from "decan";
+import { classifyResolveSupport } from "@rmichaelthomas/decan";
 
 const support = classifyResolveSupport({
   kind: "boundary",
@@ -76,7 +76,7 @@ Boundary expressions are meaningful, but not standalone occurrence candidates. T
 ## Import exact cron
 
 ```ts
-import { importCronExpression } from "decan";
+import { importCronExpression } from "@rmichaelthomas/decan";
 
 const imported = importCronExpression({
   cron: "0 9 * * 1",
@@ -89,7 +89,7 @@ The exact subset imports as weekly civil recurrence plus one local clock point. 
 ## Import and export exact RRULE
 
 ```ts
-import { exportRRule, importRRule } from "decan";
+import { exportRRule, importRRule } from "@rmichaelthomas/decan";
 
 const imported = importRRule({
   dtstart: "20260831T090000",
@@ -114,10 +114,40 @@ const exported = exportRRule({
 
 Decan does not claim full iCalendar support. RRULE interop is exact only where fidelity is proven.
 
+## Expand a recurring series
+
+```ts
+import { importRRule, resolveSeries, timezoneSnapshot } from "@rmichaelthomas/decan/temporal";
+
+const zone = timezoneSnapshot({
+  id: "America/Los_Angeles",
+  version: "tzdb-2026a",
+  initialOffsetMinutes: -420,
+  transitions: [{ at: "2026-11-01T09:00:00Z", offsetMinutes: -480 }]
+});
+
+const imported = importRRule({
+  dtstart: "20260914T180000",
+  rrule: "FREQ=WEEKLY;BYDAY=MO,WE;COUNT=6",
+  exdates: ["20260921T180000"]
+});
+if (!imported.ok) throw new Error("unsupported RRULE");
+
+const series = resolveSeries({
+  expression: imported.value.expression,
+  lifecycle: imported.value.lifecycle,
+  horizon: imported.value.horizon,
+  window: { start: "2026-09-01", end: "2026-09-30" },
+  context: [zone]
+});
+```
+
+`series.value.occurrences` holds five dates: 2026-09-14, 09-16, 09-23, 09-28, and 09-30. Each is 18:00 local, for example `2026-09-15T01:00:00Z[America/Los_Angeles]`. `series.value.excluded` is `["2026-09-21"]`. The excluded Monday still counts toward `COUNT=6`, as in RFC 5545. If the window covered a daylight-saving change, a missing or repeated local time would appear as `civil: "gap"` or `civil: "fold"`, and Decan would not pick an instant for you.
+
 ## Materialize an occurrence
 
 ```ts
-import { MemoryOccurrenceStore, materialize } from "decan";
+import { MemoryOccurrenceStore, materialize } from "@rmichaelthomas/decan";
 
 const store = new MemoryOccurrenceStore();
 
