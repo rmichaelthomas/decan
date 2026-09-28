@@ -143,6 +143,7 @@ Any other exception, and any `condition`, `adjustment`, `offset`, `relation`, `w
 - `COUNT` limits generated occurrences before `EXDATE` suppression, as in RFC 5545. An excluded date still consumes the count.
 - `UNTIL` drives generation directly: the series stops at the first generated date after `UNTIL`. There is no count estimation. `UNTIL` is date-granular, as it is in `resolveExpression`.
 - With no horizon, generation runs to `window.end`.
+- `lifecycle.effectiveUntil`, when present, also ends generation: an intent produces no occurrences after its lifecycle ends.
 - `maxOccurrences` caps generated dates. Hitting the cap before the horizon or the window end sets `truncated: true`.
 
 **EXDATE is date-granular.** The date part of an `@exdate:` token suppresses that civil date. A date-time token whose time differs from the clock point still suppresses that date. Suppressed dates inside the window are listed in `excluded`. A token that matches no generated date suppresses nothing.
@@ -156,7 +157,7 @@ Any other exception, and any `condition`, `adjustment`, `offset`, `relation`, `w
 
 **No gap or fold policy is chosen.** The consumer decides, per the non-conformant behavior below. A missing timezone snapshot is a `timezone` need, not a guess, and occurrences are then empty. A missing `lifecycle.effectiveFrom` is a `feature` need.
 
-**Identity.** `id` is the SHA-256 of the canonical JSON of `{ expression, lifecycle, horizon, window, context }`, in the style of the resolver's resolution identity. `maxOccurrences` is not part of the identity.
+**Identity.** `id` is the SHA-256 of the canonical JSON of `{ expression, lifecycle, horizon, window, context, maxOccurrences }`, in the style of the resolver's resolution identity. A capped result and an uncapped one therefore never share an id.
 
 `resolveSeries` never reads the host timezone, clock, or locale. Its only time inputs are the request's fields.
 

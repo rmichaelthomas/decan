@@ -117,7 +117,7 @@ export function resolveSeries(request: SeriesRequest): OperationResult<SeriesRes
   if (!Number.isInteger(maxOccurrences) || maxOccurrences < 1) return invalid("maxOccurrences must be a positive integer.");
 
   const context = request.context ?? [];
-  const id = sha256({ expression, lifecycle: request.lifecycle, ...(horizon ? { horizon } : {}), window: { start: request.window.start, end: request.window.end }, context: ordered(context) });
+  const id = sha256({ expression, lifecycle: request.lifecycle, ...(horizon ? { horizon } : {}), window: { start: request.window.start, end: request.window.end }, context: ordered(context), maxOccurrences });
   const needs: ResolutionNeed[] = [];
   const origin = request.lifecycle?.effectiveFrom;
   if (!origin) needs.push({ kind: "feature", requiredBy: "lifecycle.effectiveFrom", reason: "Recurrence requires an explicit lifecycle origin." });
@@ -128,7 +128,9 @@ export function resolveSeries(request: SeriesRequest): OperationResult<SeriesRes
 
   // -- generation: always from the origin, never from the window start -------------------------
   const start = Temporal.PlainDate.from({ year: origin.year, month: origin.month, day: origin.day });
-  const stop = until && Temporal.PlainDate.compare(until, windowEnd) < 0 ? until : windowEnd;
+  // Generation ends at the earliest of UNTIL, the intent's lifecycle end, and the window end.
+  const lifecycleEnd = request.lifecycle.effectiveUntil ? Temporal.PlainDate.from({ year: request.lifecycle.effectiveUntil.year, month: request.lifecycle.effectiveUntil.month, day: request.lifecycle.effectiveUntil.day }) : undefined;
+  const stop = [until, lifecycleEnd].reduce<Temporal.PlainDate>((earliest, bound) => bound && Temporal.PlainDate.compare(bound, earliest) < 0 ? bound : earliest, windowEnd);
   const periodStart = (index: number): Temporal.PlainDate => {
     const every = repeat.every * index;
     if (selections.length === 0) return repeat.unit === "day" ? start.add({ days: every }) : repeat.unit === "week" ? start.add({ weeks: every }) : repeat.unit === "month" ? start.add({ months: every }) : start.add({ years: every });

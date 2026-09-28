@@ -5,7 +5,7 @@ These examples show the public shape of Decan as a temporal-intent reference imp
 ## Canonicalize readable source
 
 ```ts
-import { canonicalizeText } from "decan";
+import { canonicalizeText } from "@rmichaelthomas/decan";
 
 const result = canonicalizeText({
   surface: "authoring",
@@ -29,7 +29,7 @@ time
 ## Resolve with pinned timezone evidence
 
 ```ts
-import { resolveExpression, timezoneSnapshot } from "decan";
+import { resolveExpression, timezoneSnapshot } from "@rmichaelthomas/decan";
 
 const zone = timezoneSnapshot({
   id: "America/New_York",
@@ -62,7 +62,7 @@ This produces a finite candidate from explicit inputs. Decan does not read the h
 ## Inspect resolver support
 
 ```ts
-import { classifyResolveSupport } from "decan";
+import { classifyResolveSupport } from "@rmichaelthomas/decan";
 
 const support = classifyResolveSupport({
   kind: "boundary",
@@ -76,7 +76,7 @@ Boundary expressions are meaningful, but not standalone occurrence candidates. T
 ## Import exact cron
 
 ```ts
-import { importCronExpression } from "decan";
+import { importCronExpression } from "@rmichaelthomas/decan";
 
 const imported = importCronExpression({
   cron: "0 9 * * 1",
@@ -89,7 +89,7 @@ The exact subset imports as weekly civil recurrence plus one local clock point. 
 ## Import and export exact RRULE
 
 ```ts
-import { exportRRule, importRRule } from "decan";
+import { exportRRule, importRRule } from "@rmichaelthomas/decan";
 
 const imported = importRRule({
   dtstart: "20260831T090000",
@@ -147,7 +147,7 @@ const series = resolveSeries({
 ## Materialize an occurrence
 
 ```ts
-import { MemoryOccurrenceStore, materialize } from "decan";
+import { MemoryOccurrenceStore, materialize } from "@rmichaelthomas/decan";
 
 const store = new MemoryOccurrenceStore();
 

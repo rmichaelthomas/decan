@@ -162,13 +162,20 @@ describe("resolveSeries: named cases", () => {
     expect(series("20260915T180000", "FREQ=WEEKLY").occurrences).toHaveLength(68); // no horizon: runs to window end
   });
 
+  it("stops at lifecycle.effectiveUntil: an intent produces no occurrences after it ends", () => {
+    const source = imported("20260915T180000", "FREQ=WEEKLY;COUNT=10");
+    const result = resolveSeries({ expression: source.expression, lifecycle: { ...source.lifecycle, effectiveUntil: { kind: "date", calendar: "iso8601", year: 2026, month: 10, day: 6 } }, horizon: source.horizon!, window: WIDE, context: [LA] });
+    expect(result).toMatchObject({ ok: true, value: { occurrences: [{ date: "2026-09-15" }, { date: "2026-09-22" }, { date: "2026-09-29" }, { date: "2026-10-06" }], truncated: false } });
+    if (result.ok) expect(result.value.occurrences).toHaveLength(4);
+  });
+
   it("identity is stable over the canonical request and moves with any of its inputs", () => {
     const base = series("20260915T180000", "FREQ=WEEKLY;COUNT=4");
     expect(series("20260915T180000", "FREQ=WEEKLY;COUNT=4").id).toBe(base.id);
     expect(base.id).toMatch(/^sha256:[0-9a-f]{64}$/);
     expect(series("20260915T180000", "FREQ=WEEKLY;COUNT=4", { window: { start: "2026-01-01", end: "2027-12-30" } }).id).not.toBe(base.id);
     expect(series("20260915T180000", "FREQ=WEEKLY;COUNT=5").id).not.toBe(base.id);
-    expect(series("20260915T180000", "FREQ=WEEKLY;COUNT=4", { maxOccurrences: 2 }).id).toBe(base.id); // the cap is not part of the identity
+    expect(series("20260915T180000", "FREQ=WEEKLY;COUNT=4", { maxOccurrences: 2 }).id).not.toBe(base.id); // a capped result is a different result
   });
 });
 
