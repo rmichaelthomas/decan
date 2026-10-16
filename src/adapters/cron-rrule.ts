@@ -145,6 +145,17 @@ const parseRule = (rrule: string): ReadonlyMap<string, string> | undefined => {
   if (entries.some((entry) => entry.length !== 2 || entry[0] === "" || entry[1] === "")) return undefined;
   return new Map(entries.map(([key, value]) => [key!.toUpperCase(), value!.toUpperCase()]));
 };
+// RFC 5545 forbids a rule part appearing more than once; a Map would silently keep only the last occurrence.
+const duplicateRuleParts = (rrule: string): ReadonlyArray<string> => {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const part of rrule.split(";")) {
+    const key = part.split("=")[0]!.toUpperCase();
+    if (seen.has(key)) duplicates.add(key);
+    seen.add(key);
+  }
+  return [...duplicates];
+};
 
 type OrdinalValue = 1 | 2 | 3 | 4 | 5 | -1;
 type ByDayToken = Readonly<{ weekday: Weekday; ordinal?: OrdinalValue }>;
@@ -171,15 +182,28 @@ const byDayTokenFor = (selection: SelectionExpression): string | undefined => {
   return undefined;
 };
 
-const parseUntil = (value: string): string | undefined => {
+// Decan's until horizon is date-granular: the whole UNTIL date is included. A DATE-TIME UNTIL is therefore exact only
+// when it is floating (no Z, which would be UTC against a local DTSTART) and no earlier in the day than the
+// occurrence clock time, so the last day's occurrence is still on or before the cutoff.
+type UntilParse = Readonly<{ ok: true; value: string } | { ok: false; reason: string }>;
+const parseUntil = (value: string, clock: Readonly<{ hour: number; minute: number; second: number }>): UntilParse => {
   const dateOnly = /^(\d{4})(\d{2})(\d{2})$/.exec(value);
-  if (dateOnly) { const [, y, m, d] = dateOnly; return `${y}-${m}-${d}`; }
-  const dateTime = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z?$/.exec(value);
-  if (dateTime) { const [, y, m, d] = dateTime; return `${y}-${m}-${d}`; }
-  return undefined;
+  const dateTime = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z?)$/.exec(value);
+  const match = dateOnly ?? dateTime;
+  if (!match) return { ok: false, reason: "UNTIL must be a basic-form DATE or DATE-TIME." };
+  const [, y, m, d] = match;
+  try { Temporal.PlainDate.from({ year: Number(y), month: Number(m), day: Number(d) }, { overflow: "reject" }); } catch { return { ok: false, reason: "UNTIL is not a valid calendar date." }; }
+  if (dateTime) {
+    const [, , , , hh, mm, ss, zulu] = dateTime;
+    if (zulu === "Z") return { ok: false, reason: "UNTIL in UTC (Z) cannot be compared with a local DTSTART exactly; Decan's until horizon is date-granular, so a timed UTC cutoff has no exact representation." };
+    const cutoff = Number(hh) * 3600 + Number(mm) * 60 + Number(ss);
+    if (Number(hh) > 23 || Number(mm) > 59 || Number(ss) > 59) return { ok: false, reason: "UNTIL has an invalid time of day." };
+    if (cutoff < clock.hour * 3600 + clock.minute * 60 + clock.second) return { ok: false, reason: "UNTIL time-of-day falls before the occurrence time, so it would exclude the final day's occurrence; Decan's until horizon is date-granular and cannot represent that cutoff." };
+  }
+  return { ok: true, value: `${y}-${m}-${d}` };
 };
 const formatUntil = (isoDate: string): string => isoDate.replace(/-/g, "");
-const parseHorizon = (rule: ReadonlyMap<string, string>): Readonly<{ ok: true; value: ResolutionHorizon | undefined } | { ok: false }> => {
+const parseHorizon = (rule: ReadonlyMap<string, string>, clock: Readonly<{ hour: number; minute: number; second: number }>): Readonly<{ ok: true; value: ResolutionHorizon | undefined } | { ok: false; reason?: string }> => {
   const countText = rule.get("COUNT");
   const untilText = rule.get("UNTIL");
   if (countText !== undefined && untilText !== undefined) return { ok: false };
@@ -188,9 +212,9 @@ const parseHorizon = (rule: ReadonlyMap<string, string>): Readonly<{ ok: true; v
     return { ok: true, value: { kind: "count", value: Number(countText) } };
   }
   if (untilText !== undefined) {
-    const until = parseUntil(untilText);
-    if (!until) return { ok: false };
-    return { ok: true, value: { kind: "until", value: until } };
+    const until = parseUntil(untilText, clock);
+    if (!until.ok) return { ok: false, reason: until.reason };
+    return { ok: true, value: { kind: "until", value: until.value } };
   }
   return { ok: true, value: undefined };
 };
@@ -216,6 +240,8 @@ export function importRRule(request: RRuleImportRequest): OperationResult<Schedu
   const start = parseDateTime(request.dtstart);
   const rule = start ? parseRule(request.rrule) : undefined;
   if (!start || !rule) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "RRULE import requires DTSTART in basic local DATE-TIME form and parseable rule parts.");
+  const duplicates = duplicateRuleParts(request.rrule);
+  if (duplicates.length > 0) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", `RRULE repeats rule part(s) ${duplicates.join(", ")}; RFC 5545 allows each part at most once, and keeping only one value would silently change the schedule.`);
 
   const allowed = new Set(["FREQ", "INTERVAL", "BYDAY", "COUNT", "UNTIL", "WKST"]);
   const extraneous = [...rule.keys()].filter((key) => !allowed.has(key));
@@ -234,8 +260,8 @@ export function importRRule(request: RRuleImportRequest): OperationResult<Schedu
   if (wkst !== undefined && !(wkst in weekdayNames)) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "RRULE WKST must be a weekday code (MO, TU, WE, TH, FR, SA, SU).");
   if (wkst !== undefined && wkst !== "MO" && interval > 1) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", `RRULE WKST=${wkst} with INTERVAL>1 is week-start dependent; Decan's week stride uses ISO weeks starting Monday, so only WKST=MO is exact when INTERVAL>1.`);
 
-  const horizonResult = parseHorizon(rule);
-  if (!horizonResult.ok) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "RRULE COUNT/UNTIL must be a positive integer COUNT xor a valid UNTIL date, not both.");
+  const horizonResult = parseHorizon(rule, start);
+  if (!horizonResult.ok) return unsupported("rrule", "import", "DECAN-ADAPTER-RRULE-UNSUPPORTED", horizonResult.reason ?? "RRULE COUNT/UNTIL must be a positive integer COUNT xor a valid UNTIL date, not both.");
   const horizon = horizonResult.value;
 
   const exdateTokens = request.exdates ?? [];
@@ -293,11 +319,15 @@ export function exportRRule(request: RRuleExportRequest): OperationResult<RRuleE
   const recognized = new Set(["point", "repeat", "selection", "exception"]);
   if (nodes.some((node) => !recognized.has(node.kind))) return unsupported("rrule", "export", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "RRULE export supports only point, repeat, selection, and exception expressions.");
 
-  const point = nodes.find((node): node is PointExpression => node.kind === "point" && node.value.kind === "clock");
-  if (!point || point.value.kind !== "clock") return unsupported("rrule", "export", "DECAN-ADAPTER-RRULE-UNSUPPORTED", "RRULE export requires exactly one local clock point.");
+  // Each node must be represented or refused: taking the first of several would silently drop the rest.
+  const points = nodes.filter((node): node is PointExpression => node.kind === "point");
+  const point = points[0];
+  if (points.length !== 1 || !point || point.value.kind !== "clock") return unsupported("rrule", "export", "DECAN-ADAPTER-RRULE-UNSUPPORTED", points.length > 1 ? `RRULE export requires exactly one local clock point; this expression has ${points.length}, and an RRULE has one time of day per DTSTART.` : "RRULE export requires exactly one local clock point.");
   const clock = point.value;
 
-  const repeat = nodes.find((node): node is RepeatExpression => node.kind === "repeat");
+  const repeats = nodes.filter((node): node is RepeatExpression => node.kind === "repeat");
+  if (repeats.length > 1) return unsupported("rrule", "export", "DECAN-ADAPTER-RRULE-UNSUPPORTED", `RRULE export supports at most one repeat cadence; this expression has ${repeats.length}.`);
+  const repeat = repeats[0];
   const selections = nodes.filter((node): node is SelectionExpression => node.kind === "selection");
   const exceptions = nodes.filter((node): node is ExceptionExpression => node.kind === "exception");
 

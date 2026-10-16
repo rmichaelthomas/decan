@@ -82,7 +82,9 @@ Cron/RRULE adapter support is exact for the following full-surface subset (v1.0,
 **RRULE — horizons:**
 
 - `COUNT=n` ↔ `{ kind: "count", value: n }` on `ScheduleAdapterImport.horizon` / `RRuleExportRequest.horizon`;
-- `UNTIL=<DATE or DATE-TIME>` ↔ `{ kind: "until", value: "YYYY-MM-DD" }` (time-of-day, if present on import, is not preserved — Decan's own horizon comparison is date-granularity only, per `resolve.ts`'s `until` handling);
+- `UNTIL=<DATE or DATE-TIME>` ↔ `{ kind: "until", value: "YYYY-MM-DD" }`. Decan's horizon comparison is date-granular (per `resolve.ts`'s `until` handling), so a DATE-TIME `UNTIL` is imported only when that cannot change the occurrence set: it must be floating (no `Z`) and no earlier in the day than the `DTSTART` clock time. A UTC (`Z`) `UNTIL`, or one earlier than the occurrence time, is rejected as unsupported rather than reduced to its date;
+- each RRULE part may appear at most once (RFC 5545); a repeated part such as `FREQ=DAILY;FREQ=WEEKLY` is rejected rather than resolved by order;
+- export requires exactly one local clock point and at most one repeat cadence; an expression with more is rejected rather than truncated to the first;
 - `COUNT` and `UNTIL` together on one rule is rejected (RFC 5545 forbids both; this is not a Decan-specific restriction).
 
 **RRULE — `EXDATE`:**
