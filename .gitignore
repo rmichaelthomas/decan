@@ -4,3 +4,8 @@ coverage/
 *.sqlite
 *.sqlite-journal
 .DS_Store
+
+# Internal planning files: kept locally, copied to the vault (not published)
+/references/*checkpoint*.md
+/docs/checkpoints/
+/docs/history/
